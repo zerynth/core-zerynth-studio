@@ -1,0 +1,157 @@
+
+<script>
+var ExampleView = {
+    examples: null,
+    current_node:null,
+    init: function(){
+        Bus.addEventListener("ex_show",ExampleView.redraw,ExampleView)
+        $("#ex_info").prop("disabled",true)
+        $("#ex_open").prop("disabled",true)
+    },
+    current_node: null,
+    on_node_selected: function(event,node){
+      ExampleView.current_node = node
+      // console.log(node)
+      if (!node.nodes){
+        Dialogs.modal("ExampleModal",node.data)
+      }
+      else {
+          $('[data-nodeid="'+node.nodeId+'"] .expand-icon').click()
+      }
+      // if (node.nodes) {
+      //   $("#ex_info").prop("disabled",true)
+      //   $("#ex_open").prop("disabled",true)
+      // } else {
+      //   $("#ex_info").prop("disabled",false)
+      //   $("#ex_open").prop("disabled",false)
+      // }
+    },
+    reload: function(){
+      return ZTC.command(["info","--examples"],{
+        stdout: (line)=>{
+          ExampleView.examples=JSON.parse(line)
+        }
+      })
+    },
+    format: function(exs){
+      var nodes = []
+      var tree = []
+      var ids = 0
+      _.each(exs,(e,k,l)=>{
+        var stack = e.tag
+        var pfix=""
+        var pnode = nodes
+        _.each(stack,(ss,kk,ll)=>{
+          pfix+=ss+"|"
+          if (!tree[pfix]){
+            var node ={
+              text:ss,
+              nodes:[]
+            }
+            tree[pfix]=node
+            pnode.push(node)
+          }
+          pnode = tree[pfix].nodes
+        })
+        pnode.push({text:e.name,icon: "fa fa-file-o",data:{path:e.path,code:e.code,desc:e.desc,name:e.name}})
+      })
+      return nodes
+    },
+    redraw: function(exs){
+        if (!ExampleView.examples){
+          ZNotify.wait("Loading examples")
+          ExampleView.reload()
+          .then((val)=>{
+              $("#ex_view").treeview({
+                  data:ExampleView.format(ExampleView.examples),
+                  onNodeSelected: ExampleView.on_node_selected,
+                  collapseIcon: "fa fa-chevron-down",
+                  expandIcon: "fa fa-chevron-right",
+                  allowReselect: true,
+                  preventUnselect: true
+              })
+              ZNotify.done()
+        }).catch((err)=>{
+          console.log(err)
+        })
+      }
+    },
+    reset: function(){
+      $("#ex_search .form-control").val("")
+      ExampleView.search() 
+        
+    },
+    search: function() {
+      var filter, i;
+      filter = $("#ex_search .form-control").val().toUpperCase();
+      if (filter) {
+        $("#ex_search .clear").show()
+      } else {
+        $("#ex_search .clear").hide()
+      }
+        
+      exs = ExampleView.examples
+      var searched = [];
+      for (i = 0; i < exs.length; i++) {
+        var l;
+        var tgs = false
+        for  (l = 0; l < exs[i].tag.length; l++) {
+          if (exs[i].tag[l].toUpperCase().indexOf(filter) > -1){
+            tgs = true
+          }
+        }
+        if ( exs[i].name.toUpperCase().indexOf(filter) > -1 || 
+             exs[i].desc.toUpperCase().indexOf(filter) > -1 ||
+             exs[i].code.toUpperCase().indexOf(filter) > -1 ||
+             tgs == true
+          ){
+              searched.push(exs[i])
+          }
+      }
+      var levels = 2
+      if (filter) {levels = 4}
+      $("#ex_view").treeview({
+          data:ExampleView.format(searched),
+          onNodeSelected: ExampleView.on_node_selected,
+          collapseIcon: "fa fa-chevron-down",
+          expandIcon: "fa fa-chevron-right",
+          preventUnselect: true,
+          allowReselect: true,
+          levels: levels 
+      })
+    }
+}
+
+</script>
+<div class="zleftbarview" id="examples_view">
+    <div class="zleftheader">
+      <div class="zleftheadertitle">Examples
+<!--         <button class="btn btn-link" style="float:right" title="open" id="ex_open"><span class="fa fa-folder-o"></span></button>
+        <button class="btn btn-link" style="float:right" title="view" id="ex_info"><span class="fa fa-eye"></span></button>
+ -->  </div>
+    </div>
+  <div class="zleftcontainer">
+    <center>
+      <form role="form" class="search-pf has-button" style="margin:4px" id="ex_search">
+        <div class="form-group has-clear">
+          <div class="search-pf-input-group">
+            <input id="search1" type="search" class="form-control" placeholder="Search for examples..." id="esearch" onkeyup="ExampleView.search()">
+            <button type="button" class="clear" aria-hidden="true" onclick="ExampleView.reset()"><span class="pficon pficon-close"></span></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-default" type="button"><span class="fa fa-search"></span></button>
+        </div>
+      </form>
+
+    
+        <!-- <input style="width: 95%; background-image: url('img/searchicon.png'); background-position: 10px 10px; background-repeat: no-repeat; font-size: 14px; padding: 10px 20px 10px 40px; border: 1px solid #ddd; margin-top: 5px; margin-bottom: 5px" type="text" id="esearch" onkeyup="ExampleView.search()" title="Search for Examples" placeholder="Search for Examples ..."> -->
+    
+    </center>
+    <div class="zleftpanel" id="ex_view"></div>
+  </div>
+</div>
+<script>
+ExampleView.init()
+</script>
+

@@ -1,0 +1,338 @@
+@font-face {
+  font-family: 'zerynth';
+  src:
+    url('fonts/zerynth.ttf?ovvil6') format('truetype'),
+    url('fonts/zerynth.woff?ovvil6') format('woff'),
+    url('fonts/zerynth.svg?ovvil6#zerynth') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+[class^="zerynth-"], [class*=" zerynth-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'zerynth' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.zerynth-Zerynth-ADM:before {
+  content: "\e90b";
+}
+.zerynth-Logo:before {
+  content: "\e90a";
+}
+.zerynth-share:before {
+  content: "\e908";
+}
+.zerynth-plus_circle2:before {
+  content: "\e06c";
+}
+.zerynth-usb:before {
+  content: "\e0bd";
+}
+.zerynth-wrap_text:before {
+  content: "\e0f5";
+}
+.zerynth-cloud_done:before {
+  content: "\e0fa";
+}
+.zerynth-cloud_download:before {
+  content: "\e0fb";
+}
+.zerynth-cloud_upload:before {
+  content: "\e0fe";
+}
+.zerynth-public:before {
+  content: "\e258";
+}
+.zerynth-star:before {
+  content: "\e260";
+}
+.zerynth-star_half:before {
+  content: "\e261";
+}
+.zerynth-star_outline:before {
+  content: "\e262";
+}
+.zerynth-account_balance:before {
+  content: "\e265";
+}
+.zerynth-extension:before {
+  content: "\e28f";
+}
+.zerynth-update_icon:before {
+  content: "\e600";
+}
+.zerynth-hash:before {
+  content: "\e601";
+}
+.zerynth-cloud_up:before {
+  content: "\e602";
+}
+.zerynth-power5:before {
+  content: "\e603";
+}
+.zerynth-terminal3:before {
+  content: "\e604";
+}
+.zerynth-flask2:before {
+  content: "\e605";
+}
+.zerynth-cloud_sync:before {
+  content: "\e606";
+}
+.zerynth-cloud_down:before {
+  content: "\e607";
+}
+.zerynth-chip:before {
+  content: "\e608";
+}
+.zerynth-chip2:before {
+  content: "\e609";
+}
+.zerynth-lightbulb2:before {
+  content: "\e60a";
+}
+.zerynth-Python_logo:before {
+  content: "\e60b";
+}
+.zerynth-dot-circle-o:before {
+  content: "\e60c";
+}
+.zerynth-chevron-circle-right:before {
+  content: "\e60d";
+}
+.zerynth-chevron-circle-left:before {
+  content: "\e60e";
+}
+.zerynth-times-circle:before {
+  content: "\e60f";
+}
+.zerynth-circle:before {
+  content: "\e610";
+}
+.zerynth-file-add2:before {
+  content: "\e800";
+}
+.zerynth-file-add:before {
+  content: "\e801";
+}
+.zerynth-spinner10:before {
+  content: "\e900";
+}
+.zerynth-tree:before {
+  content: "\e901";
+}
+.zerynth-loop2:before {
+  content: "\e902";
+}
+.zerynth-github2:before {
+  content: "\e903";
+}
+.zerynth-github5:before {
+  content: "\e904";
+}
+.zerynth-terminal2:before {
+  content: "\ea81";
+}
+.zerynth-search:before {
+  content: "\f002";
+}
+.zerynth-envelope-o:before {
+  content: "\f003";
+}
+.zerynth-user:before {
+  content: "\f007";
+}
+.zerynth-close:before {
+  content: "\f00d";
+}
+.zerynth-power-off:before {
+  content: "\f011";
+}
+.zerynth-cog:before {
+  content: "\f013";
+}
+.zerynth-trash-o:before {
+  content: "\f014";
+}
+.zerynth-lock:before {
+  content: "\f023";
+}
+.zerynth-tag:before {
+  content: "\f02b";
+}
+.zerynth-dedent:before {
+  content: "\f03b";
+}
+.zerynth-indent:before {
+  content: "\f03c";
+}
+.zerynth-pencil:before {
+  content: "\f040";
+}
+.zerynth-plus-circle:before {
+  content: "\f055";
+}
+.zerynth-check-circle:before {
+  content: "\f058";
+}
+.zerynth-question-circle:before {
+  content: "\f059";
+}
+.zerynth-info-circle:before {
+  content: "\f05a";
+}
+.zerynth-question-circle2:before {
+  content: "\f05b";
+}
+.zerynth-exclamation-circle:before {
+  content: "\f06a";
+}
+.zerynth-exclamation-triangle:before {
+  content: "\f071";
+}
+.zerynth-magnet:before {
+  content: "\f076";
+}
+.zerynth-shopping-cart:before {
+  content: "\f07a";
+}
+.zerynth-cogs:before {
+  content: "\f085";
+}
+.zerynth-unlock:before {
+  content: "\f09c";
+}
+.zerynth-feed:before {
+  content: "\f09e";
+}
+.zerynth-hand-o-right:before {
+  content: "\f0a4";
+}
+.zerynth-hand-o-left:before {
+  content: "\f0a5";
+}
+.zerynth-hand-o-up:before {
+  content: "\f0a6";
+}
+.zerynth-hand-o-down:before {
+  content: "\f0a7";
+}
+.zerynth-arrow-circle-up:before {
+  content: "\f0aa";
+}
+.zerynth-wrench:before {
+  content: "\f0ad";
+}
+.zerynth-group:before {
+  content: "\f0c0";
+}
+.zerynth-flask:before {
+  content: "\f0c3";
+}
+.zerynth-rotate-left:before {
+  content: "\f0e2";
+}
+.zerynth-bolt:before {
+  content: "\f0e7";
+}
+.zerynth-lightbulb:before {
+  content: "\f0eb";
+}
+.zerynth-spinner:before {
+  content: "\f110";
+}
+.zerynth-folder-open-o:before {
+  content: "\f115";
+}
+.zerynth-smile-o:before {
+  content: "\f118";
+}
+.zerynth-frown-o:before {
+  content: "\f119";
+}
+.zerynth-meh-o:before {
+  content: "\f11a";
+}
+.zerynth-terminal:before {
+  content: "\f120";
+}
+.zerynth-code:before {
+  content: "\f121";
+}
+.zerynth-chain-broken:before {
+  content: "\f127";
+}
+.zerynth-question:before {
+  content: "\f128";
+}
+.zerynth-eraser:before {
+  content: "\f12d";
+}
+.zerynth-puzzle-piece:before {
+  content: "\f12e";
+}
+.zerynth-sort-alpha-asc:before {
+  content: "\f15d";
+}
+.zerynth-sort-alpha-desc:before {
+  content: "\f15e";
+}
+.zerynth-sort-amount-asc:before {
+  content: "\f160";
+}
+.zerynth-sort-amount-desc:before {
+  content: "\f161";
+}
+.zerynth-bug:before {
+  content: "\f188";
+}
+.zerynth-bank:before {
+  content: "\f19c";
+}
+.zerynth-cube:before {
+  content: "\f1b2";
+}
+.zerynth-cubes:before {
+  content: "\f1b3";
+}
+.zerynth-file-code-o:before {
+  content: "\f1c9";
+}
+.zerynth-git-square:before {
+  content: "\f1d2";
+}
+.zerynth-plug:before {
+  content: "\f1e6";
+}
+.zerynth-toggle-off:before {
+  content: "\f204";
+}
+.zerynth-toggle-on:before {
+  content: "\f205";
+}
+.zerynth-user-plus:before {
+  content: "\f234";
+}
+.zerynth-new:before {
+  content: "\e906";
+}
+.zerynth-install:before {
+  content: "\e907";
+}
+.zerynth-book:before {
+  content: "\e909";
+}
+.zerynth-clock-o:before {
+  content: "\e905";
+}
+

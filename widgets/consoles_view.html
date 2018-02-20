@@ -1,0 +1,98 @@
+
+<script>
+var ConsoleView = {
+    init: function(){
+        Bus.addEventListener("consoles_change",ConsoleView.redraw,ConsoleView)
+        ConsoleView.redraw()
+    },
+    redraw: function(){
+        if (_.keys(Store.consoles).length<=0){
+          $("#consoles_view").html("There are no open consoles")
+        } else {
+          $("#consoles_view").html($.templates("#console_template").render(_.values(Store.consoles)))
+          $('#leftbar_consoles').effect('highlight', {
+            color: '#f4bf75'
+          }, 500);
+        }
+    },
+    show: function(cid){
+        Store.consoles[cid].win.focus()
+    },
+    close: function(cid){
+        Store.consoles[cid].win.close()
+    },
+    dock: function(cid,dir){
+        var dx = screen.width
+        var dy = screen.height
+
+        var wx = dx*3/4-1
+        var wy = dy
+        
+        var cw = Store.consoles[cid].win
+
+        console.log(dx+" "+dy+" "+wx+" "+wy)
+
+        if (!dir) {
+          App.win.unmaximize()
+          cw.unmaximize()
+          App.win.moveTo(0,0)
+          App.win.resizeTo(wx,wy)
+          cw.moveTo(wx,0)
+          cw.resizeTo(dx-wx,wy)
+        } else {
+          App.win.unmaximize()
+          cw.unmaximize()
+          App.win.moveTo(dx-wx,0)
+          App.win.resizeTo(wx,wy)
+          cw.moveTo(0,0)
+          cw.resizeTo(dx-wx,wy)
+        }
+    }
+}
+
+</script>
+<!-- template -->
+<script id="console_template" type="text/x-jsrender">
+    <div class="card-pf card-pf-accented card-pf-aggregate-status">
+      <h2 class="card-pf-title">{{:title}}</h2>
+      <div class="card-pf-body">
+        <p class="card-pf-aggregate-status-notifications">
+        <span class="card-pf-aggregate-status-notification">
+          <a href="javascript:ConsoleView.show('{{:cid}}')" class="add" title="Show">
+            <span class="fa fa-eye"></span>
+          </a>
+          </span>
+        <span class="card-pf-aggregate-status-notification">
+          <a href="javascript:ConsoleView.close('{{:cid}}')" class="add" title="Close">
+            <span class="fa fa-close"></span>
+          </a>
+          </span>
+<!--         <span class="card-pf-aggregate-status-notification">
+          <a href="javascript:ConsoleView.dock('{{:cid}}',0)" class="add">
+            <span class="fa fa-magic"></span>
+          </a>
+          </span>
+        <span class="card-pf-aggregate-status-notification">
+          <a href="javascript:ConsoleView.dock('{{:cid}}',1)" class="add">
+            <span class="fa fa-magic fa-flip-horizontal"></span>
+          </a>
+          </span>
+ -->        </p>
+      </div>
+    </div>
+</script>
+<div class="zleftbarview" id="consoles_panel">
+  <div class="zleftheader">
+    <div class="zleftheadertitle">Consoles</div>
+  </div>
+  <div class="zleftcontainer">
+    <div class="zleftpanel" >
+      <div class="container-fluid container-cards-pf" id="consoles_view">
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+ConsoleView.init()
+</script>
+

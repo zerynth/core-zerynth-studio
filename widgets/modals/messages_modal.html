@@ -1,0 +1,46 @@
+<script>
+
+var MessagesModal = {
+    msgs: null,
+  __fill: function(data){
+    MessagesModal.msgs=data
+  },
+  __show: function(){
+    if (!MessagesModal.msgs) return;
+    $("#msg_modal_content").html($.templates("#msg_listitem").render(MessagesModal.msgs,MessagesModal))
+    Footer.messages_read()
+    $("#messages_modal").modal()
+  }
+}
+</script>
+<!-- JS & Templates -->
+<script id="msg_listitem" type="text/x-jsrender">
+<div class="msgs_item">
+    <div class="msgs_title" title="{{:visibleFrom}}">{{if !read}}<span class="fa fa-star msgs_unread"></span>{{/if}}{{:title}}</div>
+    <div class="msgs_body">{{:message}}</div>
+  </div> 
+</script>
+
+
+
+<div class="modal fade" id="messages_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="msg_modal_title">Messages</h4>
+      </div>
+      <div class="modal-body">
+        <div style="max-height:600px;overflow:auto" id="msg_modal_content">
+
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+

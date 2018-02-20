@@ -1,0 +1,223 @@
+<script>
+var CodeTabs = {
+    tabs: [],
+    init: function(){
+        //Bus.addEventListener("document_closed",CodeTabs.redraw)
+        //Bus.addEventListener("document_new",CodeTabs.redraw)
+        Bus.addEventListener("document_ready",CodeTabs.redraw)
+        Bus.addEventListener("document_changed",CodeTabs.redraw)
+        CodeTabs.redraw()
+    },
+    _make_tabs: function(){
+        return _.sortBy(_.map(Store.docs.items,function(v,k,l){
+            return {
+                title:v.name,
+                locked: (!Store.projects.current) ? true:v.project.path!=Store.projects.current.path,
+                active: (!Store.docs.current) ? false:v.file==Store.docs.current.file,
+                doc: v,
+                proj: v.project
+            }
+        }),
+        function(v){
+            return ((v.locked)?1:0)
+        })
+    },
+    scroll_right: function(){
+        var ct = $('#code_tablist')
+        var pos = ct.scrollLeft()
+        console.log("R"+pos)
+        ct.stop().animate({scrollLeft:pos+100},'70','swing')
+    },
+    scroll_left: function(){
+        var ct = $('#code_tablist')
+        var pos = ct.scrollLeft()
+        console.log("L"+pos)
+        ct.stop().animate({scrollLeft:pos-100},'70','swing')
+
+    },
+    redraw: function(){
+        var ct = $("#code_tablist")
+        var tabs = CodeTabs._make_tabs()
+        var tmpl = $.templates('<div class="code_tab{{if locked}} locked{{/if}}{{if active}} current{{/if}}">{{if doc.modified}}*{{/if}}{{:title}}<span class="fa fa-remove"></span></div>')
+        ct.html(tmpl.render(tabs))
+        CodeTabs.tabs=tabs
+        $("#code_tablist .code_tab")
+            .unbind("click")
+            .on("click",function(){
+                var me = $(this)
+                var idx = me.index()
+                var tab = CodeTabs.tabs[idx]
+                Store.select_document(tab.doc)
+            })
+        $("#code_tablist .code_tab span")
+            .unbind("click")
+            .on("click",function(e){
+                e.stopPropagation()
+                var me = $(this)
+                var idx = me.parent().index() //warning: depends on html structure :-@
+                var tab = CodeTabs.tabs[idx]
+                var tdoc = null
+                if (tab.active) {
+                    var ntabs = CodeTabs.tabs.length
+                    if (idx-1>=0) tdoc = CodeTabs.tabs[idx-1].doc
+                    else if (idx+1<ntabs) tdoc = CodeTabs.tabs[idx+1].doc
+                }
+                Store.remove_document(tab.doc,tdoc)
+            })
+        if (tabs.length==0){
+            if (App.editors) App.editors.code.setValue("")
+        }
+    }
+}
+
+var CodeFooter = {
+    themes: [],
+    init: function(){
+        Bus.addEventListener("cursor_changed",CodeFooter.cursor_changed)
+        Bus.addEventListener("document_ready",CodeFooter.document_changed)
+        Bus.addEventListener("editor_theme_changed",CodeFooter.set_theme)
+        Bus.addEventListener("editor_font_changed",CodeFooter.set_font)
+        var fs=require("fs")
+        var files = function getDirectories(srcpath) {
+            return fs.readdirSync(srcpath).filter(function(file) {
+                return fs.statSync(path.join(srcpath, file)).isFile();
+            });
+        }
+        var thfiles = files("./bower_components/ace-builds/src-min-noconflict")
+        _.each(thfiles,function(v,k,l){
+            if (v.startsWith("theme-") && v.endsWith(".js")){
+                var theme = v.substring(6,v.indexOf(".js"))
+                var name = theme.charAt(0).toUpperCase() + theme.slice(1);
+                CodeFooter.themes.push({
+                    name:name,
+                    theme:theme
+                })
+            }
+        })
+        $("#theme_list").html(
+            $.templates('<li><a href="javascript:App.change_editor_theme(\'{{:theme}}\')">{{:name}}</a></li>').render(CodeFooter.themes)
+        )
+    },
+    set_theme: function() {
+        var theme = ZConf.get("editor_theme")
+        theme = theme.charAt(0).toUpperCase() + theme.slice(1);
+        $("#theme_name").html(theme+'<span class="caret"></span>')
+    },
+    cursor_changed:function(ev,cursor){
+        $("#code_pos").html((cursor.row+1)+", "+(cursor.column+1))
+    },
+    document_changed:function(ev,doc){
+        console.log(doc.esession.getMode())
+        $("#code_type").html(doc.emode+":"+doc.pmode)
+        $("#code_file").html(doc.file)
+    },
+    set_font:function(ev,px){
+        $("#font_px").html(px+'px<span class="caret"></span>')
+    }
+}
+
+</script>
+<div id="code_tabs" style="height:32px;width:100%;overflow:hidden;display:flex">
+    <div id="code_arrows">
+        <span class="fa fa-chevron-left" onclick="CodeTabs.scroll_left()"></span>
+        <span class="fa fa-chevron-right" onclick="CodeTabs.scroll_right()"></span>
+    </div>
+    <div id="code_tablist">
+    </div>
+</div>
+<div id="code_editor">
+    ███████╗███████╗██████╗ ██╗   ██╗███╗   ██╗████████╗██╗  ██╗    
+    ╚══███╔╝██╔════╝██╔══██╗╚██╗ ██╔╝████╗  ██║╚══██╔══╝██║  ██║    
+      ███╔╝ █████╗  ██████╔╝ ╚████╔╝ ██╔██╗ ██║   ██║   ███████║    
+     ███╔╝  ██╔══╝  ██╔══██╗  ╚██╔╝  ██║╚██╗██║   ██║   ██╔══██║    
+    ███████╗███████╗██║  ██║   ██║   ██║ ╚████║   ██║   ██║  ██║    
+    ╚══════╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝    
+                                                                    
+    ------------------------------------------------------------    
+                       Your Ideas. Embedded                         
+
+
+Hi there, and welcome to Zerynth! 
+
+We are glad to introduce you to Zerynth Studio and help you out
+if there's anything you need.
+
+For starters, here's a couple of things you might be interested in:
+
+ * You can find a quick Getting Started on how to use Zerynth Studio 
+   by clicking Help => Getting Started up there in the menu bar.
+ * You can find examples in our documentation or you can clone them 
+   directly from the lightbulb icon on the left panel
+
+If you have questions, there is usually an answer in one of these places:
+ 
+ * the online documentation (Help => Online Docs)
+ * the FAQ section (Help => FAQ)
+ * the community forum (Help => Community)
+
+Thank you and enjoy Zerynth!
+
+The Zerynth Team
+
+
+</div>
+<div id="code_footer">
+    <div id="code_pos" class="code_footer_block">--</div>
+    <div id="code_type"  class="code_footer_block">--</div>
+    <div id="code_file"  class="code_footer_block">--</div>
+    <div class="code_footer_blockr">
+        <div class="dropup">
+          <div class="dropdown-toggle"  id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Commands
+            <span class="caret"></span>
+          </div>
+          <ul class="dropdown-menu dropdown-menu-right"  aria-labelledby="dropdownMenu2">
+            <li><a href="javascript:App.ed_toggle_comment()">Toggle comment<span class="zshortcut">Ctrl+\</span></a></li>
+            <li><a href="javascript:App.ed_indent_right()">Indent Right<span class="zshortcut">Tab</span></a></li>
+            <li><a href="javascript:App.ed_indent_left()">Indent Left<span class="zshortcut">Shift+Tab</span></a></li>
+            <li><a href="javascript:App.ed_toggle_invisibles()">Toggle invisibles</a></li>
+            <li><a href="javascript:App.ed_toggle_wordwrap()">Word wrap</a></li>
+            <li role="separator" class="divider"></li>
+            <li><a href="javascript:App.ed_autopep8()">Auto PEP8<span class="zshortcut">Ctrl+Alt+8</span></a></li>
+            <li><a href="javascript:App.toggle_vimode()">VI mode</a></li>
+            
+          </ul>
+        </div>        
+    </div>
+    <div class="code_footer_blockr">
+        <div class="dropup">
+          <div id="theme_name" class="dropdown-toggle"  id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Themes
+            <span class="caret"></span>
+          </div>
+          <ul class="dropdown-menu dropdown-menu-right scrollable-menu"  id="theme_list" aria-labelledby="dropdownMenu1">
+          </ul>
+        </div>        
+    </div>
+    <div class="code_footer_blockr">
+        <div class="dropup">
+          <div id="font_px" class="dropdown-toggle"  id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            12px
+            <span class="caret"></span>
+          </div>
+          <ul class="dropdown-menu dropdown-menu-right scrollable-menu-small" aria-labelledby="dropdownMenu1">
+          <li><a href="javascript:App.set_editor_zoom(22)">22px</a></li>
+          <li><a href="javascript:App.set_editor_zoom(20)">20px</a></li>
+          <li><a href="javascript:App.set_editor_zoom(18)">18px</a></li>
+          <li><a href="javascript:App.set_editor_zoom(16)">16px</a></li>
+          <li><a href="javascript:App.set_editor_zoom(14)">14px</a></li>
+          <li><a href="javascript:App.set_editor_zoom(13)">13px</a></li>
+          <li><a href="javascript:App.set_editor_zoom(12)">12px</a></li>
+          <li><a href="javascript:App.set_editor_zoom(11)">11px</a></li>
+          <li><a href="javascript:App.set_editor_zoom(10)">10px</a></li>
+          <li><a href="javascript:App.set_editor_zoom(9)">9px</a></li>
+          </ul>
+        </div>        
+    </div>
+
+</div>
+<script type="text/javascript">
+    CodeTabs.init()
+    CodeFooter.init()
+</script>
+

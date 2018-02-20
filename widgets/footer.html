@@ -1,0 +1,67 @@
+<script>
+var Footer = {
+    disabled_updates: false,
+    init: ()=>{
+        Bus.addEventListener("updates_checked",Footer.check,Footer)
+        $("#systemupdate_label").hide()
+        $("#patches_label").hide()
+        $("#messages_label").hide()
+    },
+    hide: () =>{
+        $("#systemupdate_label").hide()
+    },
+    check: (ev,updated)=>{
+        console.log("CHECK!")
+        if (Footer.disabled_updates) return;
+        $("#systemupdate_label").hide()
+        versions = updated.versions
+        patches = updated.patches
+        messages = updated.messages
+        if (versions.major_update) $("#systemupdate_label").show();
+        else $("#systemupdate_label").hide()
+        if (versions.minor_update) $("#patches_label").show();
+        else $("#patches_label").hide()
+        
+        var num_msg = 0;
+        _.each(messages,(m,k,l)=>{if (!m.read) num_msg++})
+        if (num_msg) {
+            $("#messages_label_num").html(""+num_msg);
+            $("#messages_label").show();
+        }
+        else $("#messages_label").hide()
+        
+
+        Footer.versions = versions
+        Footer.patches = patches
+        Footer.messages = messages
+
+    },
+    messages_read: ()=>{
+        $("#messages_label").hide()
+
+    }
+}
+
+function handle_footer_notify(div){
+    if (div.id=="gopro_label"){
+        require('nw.gui').Shell.openExternal("https://store.zerynth.com/zerynth-studio-pro/");
+    } else if (div.id=="systemupdate_label"){
+        Dialogs.modal("UpdateModal",Footer.versions)
+    } else if (div.id=="patches_label"){
+        Dialogs.modal("PatchesModal",Footer.patches)
+    } else if (div.id=="messages_label"){
+        Dialogs.modal("MessagesModal",Footer.messages)
+    }
+    
+}
+</script>
+<div id="notify_area">
+<span id="test_label" class="label label-warning" style="display:none">TEST VERSION</span>
+<span id="ci_label" class="label label-warning" style="display:none">CI VERSION</span>
+<span id="messages_label" class="label label-success" onclick="handle_footer_notify(this)"><span class="fa fa-envelope-o"></span>&nbsp;<span id="messages_label_num"></span></span>
+<span id="patches_label" class="label label-success" onclick="handle_footer_notify(this)"><span class="fa fa-fw fa-download"></span>Rolling update</span>
+<span id="systemupdate_label" class="label label-info" onclick="handle_footer_notify(this)">System Update</span>
+</div>
+<div id="spinner_text" style="margin-left:auto;margin-right:32px"></div>
+<div class="spinner spinner-sm" id="spinner" style="height:20px !important;width:20px !important; position:absolute; right:10px;display:none"></div>
+<script>Footer.init()</script>

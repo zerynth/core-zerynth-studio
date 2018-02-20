@@ -1,0 +1,204 @@
+<script>
+var PackageView ={
+    searching: false,
+    packages: [],
+    index: null,
+    query:"",
+    src: [],
+    init: function(){
+      // Hide the clear button if the search input is empty
+      Bus.addEventListener("package_installed",PackageView.refresh,PackageView)
+      $("#zpm_search .clear").each(function() {
+        if (!$(this).prev('.form-control').val()) {
+          $(this).hide();
+        }
+      });
+      // Show the clear button upon entering text in the search input
+      $("#zpm_search .form-control").keyup(function () {
+        var t = $(this);
+        t.next('button').toggle(Boolean(t.val()));
+      });
+      $("#zpm_search .form-control").keydown(function (e) {
+        if (e.keyCode==13) {
+            var query = $("#zpm_search .form-control").val()
+            PackageView.do_search(query)
+            $("#zpm_search .form-control").val('')
+            e.preventDefault()
+            return false
+        }
+      });
+
+      // Upon clicking the clear button, empty the entered text and hide the clear button
+      $("#zpm_search .clear").click(function () {
+        $(this).prev('.form-control').val('').focus();
+        $(this).hide();
+        PackageView.query=null
+        PackageView.refresh()
+      });
+
+      PackageView.refresh(true)
+    },
+    do_search: function(query){
+        if (query){
+            var items = PackageView.index.search(query)
+            console.log("ITEMS")
+            console.log(items)
+            PackageView.src = _.map(items,(v,k)=>{v.item.score=Math.floor(100-100*v.score); return v.item})
+        } else {
+            PackageView.src = PackageView.packages || []
+        }
+        PackageView.query = query
+        PackageView.render()     
+    },
+    refresh: function(force){
+      PackageView.load_packs(force)
+      .then(()=>{
+          console.log("render")
+          PackageView.do_search()
+          console.log(PackageView.src)
+          PackageView.render()
+      }).catch((err)=>{
+        console.log(err)
+      })
+    },
+    render: function(){
+      var res = PackageView.src
+      var packs = PackageView.packages;
+      $("#zpm_list").html($.templates("#zpm_pack_card").render(PackageView.src))
+      if (PackageView.query) $("#zpm_search_for").html("Searched: "+PackageView.query)
+      else $("#zpm_search_for").html("")
+      
+      $(".shortable-desc").shorten()
+    },
+    load_packs: function(force){
+        return new Promise((resolve,reject)=>{
+              var args = ["package","repository"]
+              if (force) args.push("--force")
+              var packs = []
+              ZTC.command(args,{
+                stdout: (line)=>{
+                    try {
+                        var js = JSON.parse(line)
+                        packs = js
+                        //PackageView.packages = js
+                    } catch(err){
+                        console.log(err)
+                    }
+                }
+              }).then(()=>{
+                    ZTC.command(["package","installed"],{
+                        stdout: (line)=>{
+                            try {
+                                var js = JSON.parse(line)
+                                js = _.filter(js,(v)=>{ return v.repo=="official"})
+                                packs = packs.concat(js)
+                                PackageView.packages = packs
+                                PackageView.index = new Fuse(packs,{
+                                          shouldSort: true,
+                                          threshold: 0.6,
+                                          location: 0,
+                                          distance: 100,
+                                          maxPatternLength: 32,
+                                          include: ["matches","score"],
+                                          keys: [
+                                            "title",
+                                            "description",
+                                            "fullname",
+                                            "keywords"
+                                            ]
+                                        })
+                            } catch(err) {
+                                console.log(err)
+                            }
+                        }
+                    }).then(()=>{
+                        resolve()
+                    }).catch((err)=>{
+                        console.log(err)
+                        reject(err)
+                    })
+              })
+              .catch((err)=>{
+                  console.log(err)
+                  reject(err)
+              })
+        })
+        
+    }
+
+}
+</script>
+
+<script id="zpm_pack_card" type="text/x-jsrender">  
+  <div class="list-group-item list-view-pf-stacked list-view-pf-top-align">
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading zpm_pack_title" title="Search relevance:{{:score}}%">
+            {{:title}}
+          </div>
+          <div class="list-group-item-text">
+            <div class="shortable-desc  zpm_pack_desc">
+            {{:description}}<br>
+            </div>
+            <div class=" zpm_pack_fullname">{{:import}}</div>
+            {{if repo!="official"}}
+            <div class=" zpm_pack_links">
+                <b><a href="javascript:App.install('{{:fullname}}','{{:updated}}')">{{if installed}}Update{{else}}Install{{/if}}</a></b>
+                |
+                <a href="javascript:App.pack_community_doc('{{:url}}')">Github repository...</a>
+            </div>
+            {{else}}
+            <div class=" zpm_pack_fullname"><a href="javascript:App.pack_doc('{{:fullname}}','{{:last_version}}')">Docs...</a></div>
+            {{/if}}
+            <div class="zpm_pack_footer">
+            {{if repo=="official"}}
+            <span class="label label-success zpm_pack_tag">{{:repo}}</span>
+            {{else}}
+            <span class="label label-primary zpm_pack_tag">community</span>
+            {{if installed!=last_version}}
+            <span class="label label-warning zpm_pack_tag" title="last version">newest: {{:last_version}}</span>
+            {{/if}}
+            {{/if}}
+            {{if installed}}
+                <span class="label label-info zpm_pack_tag" title="installed">installed: {{:installed}}</span>
+            {{/if}}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</script>
+
+<div class="zleftbarview" id="packages_view">
+  <div class="zleftheader">
+    <div class="zleftheadertitle">Library Manager<button class="btn btn-link" style="position: absolute;right:4px;top:2px" onclick="PackageView.refresh(true)" title="Refresh community repository"><span class="fa fa-refresh"></span></button></div>
+  </div>
+  <div class="zleftcontainer">
+    <div class="zleftpanel" id="zpm_view">
+      <form role="form" class="search-pf has-button" style="margin:4px" id="zpm_search">
+        <div class="form-group has-clear">
+          <div class="search-pf-input-group">
+            <input id="search1" type="search" class="form-control" placeholder="Search for libraries...">
+            <button type="button" class="clear" aria-hidden="true"><span class="pficon pficon-close"></span></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <button class="btn btn-default" type="button"><span class="fa fa-search"></span></button>
+        </div>
+      </form>
+      <div class="zpm_switches" style="text-align: center;margin-bottom:4px">
+      <!-- <input class="bootstrap-switch" id="zpm_new_sw" type="checkbox" checked data-size="mini" data-label-text="updated"> -->
+      </div>
+      <div class="container-fluid" style="padding:0;margin:0">
+        <div class="text-center zellipsis" id="zpm_search_for"></div>
+        <div class="list-group list-view-pf"  id="zpm_list">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+PackageView.init()
+</script>

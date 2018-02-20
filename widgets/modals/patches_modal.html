@@ -1,0 +1,97 @@
+<script>
+
+var PatchesModal = {
+    data: null,
+  __fill: function(data){
+    PatchesModal.data=data
+  },
+  __show: function(){
+    if (!PatchesModal.data) return;
+    var chlog = PatchesModal.data.changelog
+    chlog.packs = _.map(PatchesModal.data.packs,(v,k,l)=>{
+        return {
+            fullname:v.fullname,
+            hash: v.hash,
+            size: parseInt(v.size/1024)
+        }
+    })
+    //TODO table for deleted packs
+    // console.log(chlog)
+    $("#patches_modal_content").html($.templates("#patches_listitem").render(chlog,PatchesModal))
+    $("#patches_modal").modal()
+  },
+  __hide: function(){
+    $("#patches_modal").modal("hide");
+  },
+  install: function(){
+    if (PatchesModal.installing) {
+      Z.log("An update is ongoing, please wait for it to finish!")
+      return
+    }
+    PatchesModal.__hide()
+    PatchesModal.installing=true
+    ZNotify.wait("Updating...")
+      ZTC.command(["package","patches","--finalize"])
+      .then(()=>{   
+        ZNotify.done("Update done!")
+        Z.log("Update ok")
+        Z.log("====> Restart Zerynth Studio to finalize the update! <====")
+        Footer.disabled_updates=true
+        Footer.hide()
+        PatchesModal.installing=false
+        Bus.dispatch("package_installed")
+      })
+      .catch((err)=>{
+        Z.log("Update failed:"+err)
+        ZNotify.done("Update failed")
+        PatchesModal.installing=false
+      })
+    
+  }
+}
+</script>
+<!-- JS & Templates -->
+<script id="patches_listitem" type="text/x-jsrender">
+<div class="patches_item {{if packs}}patches_current{{/if}}">
+    <div class="patches_title">{{if packs}}<span class="fa fa-star msgs_unread"></span>{{/if}}{{:title}}</div>
+    <div class="patches_body">
+    {{:body}}
+    {{if packs}}
+        <br><br>
+        The following packages will be updated:
+        <ul>
+        {{for packs}}
+            <li title="{{:hash}}">{{:fullname}} ({{if hash=="-"}}will be deleted{{else}}{{:size}} Kb{{/if}})</li>
+        {{/for}}
+        </ul> 
+    {{/if}}
+    </div>
+    <div class="patches_date">{{:date}}</div>
+</div> 
+</script>
+
+
+
+<div class="modal fade" id="patches_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="msg_modal_title">Rolling Update</h4>
+      </div>
+      <div class="modal-body">
+        <div style="max-height:600px;overflow:auto" id="patches_modal_content">
+
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="PatchesModal.install()">Update</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

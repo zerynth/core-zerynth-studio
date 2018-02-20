@@ -1,0 +1,140 @@
+<script>
+  var ProjectsView = {
+    hidden_wks: [],
+    init: function(){
+        Bus.addEventListener("projects_change",ProjectsView.redraw)
+        ProjectsView.redraw()
+    },
+    redraw: function(){
+        var prjs = Store.allprojects
+        ZNotify.wait("Loading projects")
+        if (!prjs.refreshed) {
+            Store.fill_allprojects().then(()=>{
+                ZNotify.done()
+                ProjectsView.redraw() //call again, this time is refreshed
+            })
+            return
+        }
+        var curwks=null
+        var container = $("#current_projects_view")
+        var html = ""
+        var data = _.map(Store.allprojects.items,function(prj,key,lst){
+            var res = {
+                prj:prj,
+                has_wks:false,
+                has_git: prj.git_url,
+                has_lib:prj.package,
+                key:key,
+                selected:key==Store.allprojects.selected,
+                hidden:_.indexOf(ProjectsView.hidden_wks,prj.wks)>=0
+            }
+            if (curwks!=prj.wks){
+                curwks = prj.wks
+                res.has_wks = true
+            }
+            return res
+        })
+        var html = $.templates("#projects_view_listitem").render(data)
+        container.html(html)
+        $("#projects_view .list-group-item")
+            .unbind("click")
+            .bind("click",function(){
+                var grps = $("#projects_view .list-group-item")
+                var current = Store.allprojects.selected
+                if(current>=0) $(grps[current]).removeClass("current")
+                current = parseInt($(this).attr("key"))
+                $(grps[current]).addClass("current")
+                Store.allprojects.selected = current
+            })
+        $("#projects_view .zleftlistheader")
+            .unbind("click")
+            .bind("click",function(){
+                var wks = $(this).attr("target")
+                if (_.indexOf(ProjectsView.hidden_wks,wks)>=0) ProjectsView.hidden_wks=_.without(ProjectsView.hidden_wks,wks);
+                else ProjectsView.hidden_wks.push(wks);
+                ProjectsView.redraw()
+            })
+        ZNotify.done()
+    },
+    open_listed_project: function(index){
+        console.log("opening "+index)
+        console.log(Store.allprojects.items[index])
+        var prj = new Project(Store.allprojects.items[index].path)
+        prj.open().then(()=>{
+            Store.add_project(prj,true)
+            Leftbar.project()
+        }).catch((err)=>{
+            ZNotify.done(err)
+        })
+    }
+}
+
+</script>
+
+<!-- JS & Templates -->
+<script id="projects_view_listitem" type="text/x-jsrender">
+    {{if has_wks }}
+      {{if hidden}}
+        <div class="zleftlistheader" target="{{:prj.wks}}"><span class="fa fa-caret-right" style="width:16px;height:16px">&nbsp;</span>{{:prj.wks}}</div>
+      {{else}}
+        <div class="zleftlistheader" target="{{:prj.wks}}"><span class="fa fa-caret-down" style="width:16px;height:16px">&nbsp;</span>{{:prj.wks}}</div>
+      {{/if}}
+    {{/if}}
+    <div class="list-group-item{{if selected}} current{{/if}} list-view-pf-stacked" key="{{:key}}" {{if hidden}}style="display:none"{{else}}style="cursor:pointer;"{{/if}} onclick="ProjectsView.open_listed_project({{:key}})">
+      <div class="list-view-pf-main-info">
+          <div class="list-view-pf-left">
+            <button class="btn btn-link">
+            <span class="fa-stack fa-lg">
+            <i class="fa fa-fw fa-folder-o fa-stack-2x"></i>
+            {{if has_lib}}
+            <i class="fa fa-book fa-stack-1x" style="font-size:1em"></i>
+            {{else has_git}}
+            <i class="fa fa-code-fork fa-stack-1x" style="font-size:1em"></i>
+            {{/if}}
+            </span>
+            </button>
+          </div>
+        <div class="list-view-pf-body">
+          <div class="list-view-pf-description">
+            <div class="list-group-item-heading">
+              {{:prj.title}}
+            </div>
+            <div class="list-group-item-text">
+              {{:prj.path}}
+            </div>
+          </div>
+
+          <div class="list-view-pf-actions">
+          </div>
+        </div>
+      </div>
+    </div>
+</script>
+<!-- HTML -->
+<div class="zleftbarview" id="projects_view">
+  <div class="zleftheader">
+    <div class="zleftheadertitle">Projects Browser</div>
+    <div class="dropdown  dropdown-kebab-pf">
+      <button class="btn btn-link dropdown-toggle" type="button" id="dropdownKebab" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+        <span class="fa fa-ellipsis-v"></span>
+      </button>
+      <ul class="dropdown-menu " aria-labelledby="dropdownKebab">
+        <li><a href="javascript:Dialogs.project_new()">New Project...</a></li>
+        <li><a href="javascript:Dialogs.project_open()">Open...</a></li>
+        <li><a href="javascript:Dialogs.project_clone()">Clone...</a></li>
+        <li role="separator" class="divider"></li>
+        <li><a href="#">Refresh</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="zleftcontainer">
+    <div class="zleftpanel">
+      <div class="container-fluid" style="padding:0px">
+        <div class="list-group list-view-pf list-view-pf-view"  id="current_projects_view"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  ProjectsView.init()
+</script>

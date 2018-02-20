@@ -1,0 +1,47 @@
+<script>
+
+var AboutModal = {
+  __fill: function(data){
+    ZTC.command(["info","--fullversion"],{
+      stdout:(line)=>{
+        $("#about_version").html(line)
+        if (Store.profile && Store.profile.subscription!="free") {
+            $("#about_image").attr("src","img/Logo512pro.png")
+        }
+      }
+    })
+    $('a[target=_blank]').on('click', function(){
+        require('nw.gui').Shell.openExternal( this.href );
+        return false;
+    });
+
+  },
+  __show: function(){
+    $("#about_modal").modal()
+  },
+  __hide: function(){
+    $("#about_modal").modal("hide")
+  }
+}
+</script>
+
+<div class="modal fade" id="about_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">About Zerynth</h4>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: center"><img id = "about_image" src="img/Logo512.png" style="width:128px;height:128px"></div>
+        <div style="text-align: center;font-weight:bold;font-size:28px">Zerynth Studio</div>
+        <div style="text-align: center;"><a href="http://www.zerynth.com" target="_blank">www.zerynth.com</a></div>
+        <div style="text-align: center;font-size:14px" id="about_version"></div>
+        <br>
+        <div style="text-align: center;">Copyright © 2015-2017 Kinzica Ventures LLC</div>
+      </div>
+    </div>
+  </div>
+</div>

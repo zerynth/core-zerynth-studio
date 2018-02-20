@@ -1,0 +1,323 @@
+
+<script>
+var ProjectView = {
+    init: function(){
+        Bus.addEventListener("project_new",ProjectView.redraw,ProjectView)
+        Bus.addEventListener("project_change",ProjectView.redraw,ProjectView)
+        Bus.addEventListener("device_change",ProjectView.device_change,ProjectView)
+        Bus.addEventListener("document_changed",ProjectView.redraw,ProjectView)
+        ProjectView.redraw()
+    },
+    current_node: null,
+    last_select:0,
+    on_node_selected: function(event,node){
+        var now = Date.now()
+        if (
+          ProjectView.current_node  && 
+          ProjectView.current_node.fullname == node.fullname && 
+          (now-ProjectView.last_select<600)
+          ){
+          if (node.type=="f"){
+            Store.add_document(Store.projects.current,node.fullname,true)
+          }
+        }
+        console.log(now-ProjectView.last_select)
+        ProjectView.current_node = node
+        ProjectView.last_select = now
+    },
+    device_change: function(ev,dev){
+      App.handle_submenus()
+      //TODO: disable uplink for virtual devices
+      //TODO: disable uplink & compile for ambguous devices
+
+    },
+    redraw: function(){
+        var prj = Store.projects.current
+        var picker = $("#project_picker")
+        if (!prj) {
+            $("#dropdownPrjGit").hide();
+            $("#dropdownPrjKebab").hide();
+            //empty select + no open project message
+            picker.empty()
+            picker.prop("disabled",true)
+            picker.selectpicker("refresh")
+            picker.unbind("change")
+            $("#current_project_header").hide()
+            $("#current_project_view").html($.templates("#project_view_empty").render())
+            if(ZConf.conf.env.recent_projects.length>0){
+              $("#current_project_view").append('<div style="text-align:center">Recently opened</div>')
+              $("#current_project_view").append('<div class="container-fluid container-cards-pf">')
+              $("#current_project_view").append($.templates("#project_view_recent").render(
+                  _.map(ZConf.conf.env.recent_projects,(v,k,l)=>{
+                    return {title:v,path:v.replace(/\\/g,"\\\\")}
+                  })
+                )
+              )
+              $("#current_project_view").append('</div>')
+            }
+            return
+        }
+        $("#dropdownPrjGit").show();
+        $("#dropdownPrjKebab").show();
+        ZNotify.wait("Loading project")
+        prj.open().then(()=>{
+          gitinfo = prj.info.git
+          libinfo = prj.info.package
+          if (gitinfo){
+            if (gitinfo.status=="up to date") { gitinfo.status_icon="fa fa-check fa-fw"; gitinfo.status_title="Up to date";}
+            if (gitinfo.status=="newer") {gitinfo.status_icon="fa fa-plus fa-fw fa-cloud-upload";  gitinfo.status_title="Remote is behind";}
+            if (gitinfo.status=="older") {gitinfo.status_icon="fa fa-minus fa-fw fa-cloud-download";  gitinfo.status_title="Remote is ahead";}
+          }
+          prj.read_tree({
+            file: (filename) =>{
+              var dd = { icon: "fa fa-file-o"}
+              if (gitinfo && _.has(gitinfo.changes,filename)) {
+                dd.class = "git-modified"
+              }
+              return dd
+            },
+            dir: (dirname) => {
+              var dd = {icon: "fa fa-folder-o"}
+              return dd
+            }
+          }).then((val)=>{
+              $("#current_project_view").treeview({
+                  data:[val],
+                  onNodeSelected: ProjectView.on_node_selected,
+                  collapseIcon: "fa fa-chevron-down",
+                  expandIcon: "fa fa-chevron-right",
+                  preventUnselect: true,
+                  allowReselect: true,
+                  showTags:true
+              })
+              picker.empty()
+              picker.prop("disabled",false)
+              picker.html($.templates('<option value="{{:path}}">{{:info.title}}</option>').render(Store.projects.items))
+              picker.unbind("change")
+              picker.selectpicker("refresh")
+              if(Store.projects.current) picker.selectpicker("val",Store.projects.current.path)
+              picker.on("change",function(){
+                    var selected = $('#project_picker option:selected').val();
+                    console.log("selected is "+selected)
+                    var prj = Store.find_project(selected)
+                    console.log(prj)
+                    Store.add_project(prj,true)
+                })
+              ZNotify.done()
+          }).catch((err)=>{
+            console.log("Error reading project tree!"+err)
+          })
+          if(prj.info.git_url){
+            $("#project_footer").html($.templates("#project_gitinfo").render(gitinfo))
+            $(".opt_git").removeClass("disabled") //enable all
+            $("#opt_git_init").addClass("disabled") 
+          } else {
+            $("#project_footer").html("");
+            $(".opt_git").addClass("disabled") //disable all
+            $("#opt_git_init").removeClass("disabled")
+          }
+          $(".opt_git a").unbind("click")
+          $(".opt_git a").click(function(event) {});
+          $(".opt_git.disabled a").click(function(event) {
+              event.preventDefault();
+          });
+          if(prj.info.package){
+            $("#current_project_header").show()
+            $("#current_project_header").html($.templates("#project_libinfo").render([prj.info.package]))
+          } else {
+            $("#current_project_header").html("")
+          }
+        }).catch((err)=>{
+          console.log("Error loading project!"+err)
+        })
+    },
+    ask_add_file: function(){
+      var prj = Store.projects.current
+      if(!prj) return;
+      Dialogs.modal("FilenameModal",{
+        title:"New File...",
+        resolve:(file)=>{
+          var filepath = Z.path.join(prj.path,file)
+          Z.fs.outputFile(filepath,"",(err)=>{
+            if(!err) Dialogs.unmodal("FilenameModal")
+            else Dialogs.modal_error("FilenameModal","Can't create file! "+err)
+          })
+        }
+      })
+    },
+    add_file: function(file){
+        var prj = Store.projects.current
+        if(!prj) return;
+        Z.log("Copying file: "+file)
+        Z.fs.copySync(file,Z.path.join(prj.path,Z.path.basename(file)))
+    },
+    del_file: function(){
+      var prj = Store.projects.current
+      if(!prj) return;
+      if (!ProjectView.current_node) return;
+      Z.log("Removing "+ProjectView.current_node.fullname)
+      Z.fs.removeSync(ProjectView.current_node.fullname)
+      ProjectView.current_node=null
+      ProjectView.redraw()
+    },
+    ask_add_folder: function(){
+        var prj = Store.projects.current
+        if(!prj) return;
+        Dialogs.modal("FilenameModal",{
+          title:"New Folder...",
+          resolve:(dir)=>{
+            var dirpath = Z.path.join(prj.path,dir)
+            Z.fs.mkdirs(dirpath,(err)=>{
+              if(!err) Dialogs.unmodal("FilenameModal")
+              else Dialogs.modal_error("FilenameModal","Can't create folder! "+err)
+            })
+          }
+        })
+    },
+    close: function(){
+      console.log("CLOSE!")
+        var prj = Store.projects.current
+        console.log(prj)
+        if(!prj) return
+        Store.remove_project(prj.path)
+    },
+    git_init: function(cb){
+        console.log("GIT INIT!")
+        var prj = Store.projects.current
+        console.log(prj)
+        if(!prj) return
+        ZNotify.wait("Initializing repository")
+        prj.toggle_watcher(false)
+        ZTC.prj_git_init(prj.path)
+          .then(()=>{
+            ZTC.prj_git_commit(prj.path,"First Commit")
+              .then(()=>{
+                ZTC.prj_git_push(prj.path)
+                  .then(()=>{
+                    ProjectView.redraw()
+                    prj.toggle_watcher(true)
+                    ZNotify.done()
+                    if (cb) cb(true)
+                  })
+                  .catch((err)=>{
+                      prj.toggle_watcher(true)
+                      ZNotify.done("Fail")
+                      if (cb) cb(false)
+                  })
+              })
+              .catch((err)=>{
+                  prj.toggle_watcher(true)
+                  ZNotify.done("Fail")
+                  if (cb) cb(false)
+              })
+          })
+          .catch((err)=>{
+            prj.toggle_watcher(true)
+            ZNotify.done("Fail")
+            if (cb) cb(false)
+          })
+        
+    },
+    git_op: function(op){
+        var prj = Store.projects.current
+        if(!prj) return
+        ZNotify.wait("Git "+op+"...")
+        ZTC["prj_git_"+op](prj.path)
+          .then(()=>{
+              ProjectView.redraw()
+              ZNotify.done()
+            })
+            .catch((err)=>{
+              ZNotify.done(err)
+            })
+    }
+}
+
+</script>
+<!-- template -->
+<script id="project_view_empty" type="text/x-jsrender">
+  <div class="container-fluid container-cards-pf">
+    <div class="card-pf card-pf-accented card-pf-aggregate-status">
+      <h2 class="card-pf-title">No current project!</h2>
+      <div class="card-pf-body">
+        <p class="card-pf-aggregate-status-notifications">
+        <span class="card-pf-aggregate-status-notification">
+          <a href="javascript:Dialogs.project_new()" class="add" data-toggle="tooltip" data-placement="top" title="Create new project">
+            <span class="pficon pficon-add-circle-o"></span>Create
+          </a>
+          </span>
+        <span class="card-pf-aggregate-status-notification">
+          <a href="javascript:Dialogs.project_open()" class="add" data-toggle="tooltip" data-placement="top" title="Open existing project">
+            <span class="pficon pficon-folder-open"></span>Open
+          </a>
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+</script>
+<script id="project_view_recent" type="text/x-jsrender">
+    <div class="card-pf card-pf-accented card-pf-aggregate-status">
+      <h2 class="card-pf-title"><a href="javascript:App._open_recent_prj('{{:path}}')">{{:title}}</a></h2>
+      <div class="card-pf-body">
+      </div>
+    </div>
+  </div>
+</script>
+<script id="project_gitinfo" type="text/x-jsrender">
+    <span class="fa fa-code-fork"></span>&nbsp;{{:remote}}/{{:branch}}&nbsp;{{if tag}}<span class="fa fa-tag"></span>&nbsp;{{:tag}}&nbsp;{{/if}}<div style="position:absolute;right:4px;bottom:0"><span class="fa fa-circle" style="font-size:8px" title="Files changed"></span>{{:nchanges}}<span class="{{:status_icon}}" title="{{:status_title}}"></span></div>
+</script>
+
+<script id="project_libinfo" type="text/x-jsrender">
+    <div class="label-zerynth" style="width:100%;padding-left:4px;padding-right:4px"><span class="fa fa-book"></span>&nbsp;&nbsp;{{:fullname}}&nbsp;{{:version}}&nbsp;</div>
+</script>
+
+
+
+<div class="zleftbarview" id="project_view">
+    <div class="zleftheader">
+      <div class="zleftheadertitle">Project view</div>
+      <div class="dropdown  dropdown-kebab-pf">
+        <button class="btn btn-link dropdown-toggle" type="button" id="dropdownPrjGit" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span class="fa fa-code-fork fa-fw"></span>
+        </button>
+        <ul class="dropdown-menu " aria-labelledby="dropdownKebab">
+          <li class="opt_git" id="opt_git_init"><a href="javascript:ProjectView.git_init()">Create Repository</a></li>
+          <li class="opt_git" id="opt_git_commit"><a href="javascript:ProjectView.git_op('commit')">Commit Changes</a></li>
+          <li class="opt_git" id="opt_git_push"><a href="javascript:ProjectView.git_op('push')">Push</a></li>
+          <li class="opt_git" id="opt_git_fetch"><a href="javascript:ProjectView.git_op('fetch')">Fetch</a></li>
+          <li class="opt_git" id="opt_git_pull"><a href="javascript:ProjectView.git_op('pull')">Pull</a></li>
+        
+        </ul>
+      </div>
+      <div class="dropdown  dropdown-kebab-pf">
+        <button class="btn btn-link dropdown-toggle" type="button" id="dropdownPrjKebab" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span class="fa fa-fw fa-ellipsis-v"></span>
+        </button>
+        <ul class="dropdown-menu " aria-labelledby="dropdownKebab">
+          <li><a href="javascript:ProjectView.ask_add_file()">Add File...</a></li>
+          <li><a href="javascript:ProjectView.ask_add_folder()">Add Folder...</a></li>
+          <li><a href="javascript:ProjectView.del_file()">Delete selected</a></li>
+          <li role="separator" class="divider"></li>
+          <li><a href="javascript:App.compile_current_project()">Compile</a></li>
+          <li><a href="javascript:App.uplink_current_project()">Uplink</a></li>
+          <li role="separator" class="divider"></li>
+          <li><a href="javascript:App.make_current_project_docs()">Make Docs</a></li>
+          <li><a href="javascript:App.view_current_project_docs()">View Docs</a></li>
+          <li><a href="javascript:Dialogs.library_publish()">Publish</a></li>
+          <li role="separator" class="divider"></li>
+          <li><a href="javascript:ProjectView.redraw()">Refresh</a></li>
+          <li><a href="javascript:ProjectView.close()">Close</a></li>
+        </ul>
+      </div>
+    </div>
+  <div class="zleftcontainer withfooter" id="project_holder">
+    <div class="zleftpanelheader" id="current_project_header"></div>
+    <div class="zleftpanel" id="current_project_view"></div>
+    <div class="zleftfooter" id="project_footer"></div>
+  </div>
+</div>
+<script>
+ProjectView.init()
+</script>
+

@@ -1,0 +1,21 @@
+{
+  "name": "Zerynth Studio",
+  "description": "",
+  "main": "index.html",
+  "authors": [
+    "dev@zerynth.com"
+  ],
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies":{
+	"patternfly":"^3.10.0"	
+  }
+}

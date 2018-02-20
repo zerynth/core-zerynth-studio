@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title id="console_title">Console</title>
+    <link href="bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+    
+     <!-- PatternFly Styles -->
+    <link href="bower_components/patternfly/dist/css/patternfly.min.css" rel="stylesheet" media="screen, print">
+    <link href="bower_components/patternfly/dist/css/patternfly-additions.min.css" rel="stylesheet" media="screen, print">
+
+    <!-- jQuery & Underscore -->
+    <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="bower_components/underscore/underscore-min.js"></script>
+    <!-- JsRender -->
+    <script src="bower_components/jsrender/jsrender.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+
+    <!-- PatternFly -->
+    <script src="bower_components/patternfly/dist/js/patternfly.min.js"></script>
+    <script src="bower_components/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
+    <!-- ACE -->
+    <script src="bower_components/ace-builds/src-min-noconflict/ace.js"></script>
+    <script src="bower_components/ace-builds/src-min-noconflict/ext-language_tools.js"></script>
+    <!-- ZJS LIBS -->
+    <script type="text/javascript" src="zjs/z.js"></script>
+    <script type="text/javascript" src="zjs/zconf.js"></script>
+    <script type="text/javascript" src="zjs/ztc.js"></script>
+
+    <link href="zcss/style.css" rel="stylesheet" type="text/css">
+    <style>
+        .bootstrap-select {
+            max-width:100px;
+            margin-top:2px;
+        }
+        .exception {
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body style="height:100%;background:#eee">
+<div id="console_header" style="height:32px;width:100%;border-bottom:1px solid#333 ">
+<!--
+    <select class="selectpicker" id="baudrate">
+        <option value="115200">115200</option>
+        <option value="57600">57600</option>
+        <option value="56000">56000</option>
+        <option value="38400">38400</option>
+        <option value="28800">28800</option>
+        <option value="19200">19200</option>
+        <option value="14400">14400</option>
+        <option value="9600">9600</option>
+    </select>
+    <select class="selectpicker"  id="parity">
+        <option value="0">No parity</option>
+        <option value="1">Even</option>
+    </select>
+    <select class="selectpicker"  id="stopbits">
+        <option value="0">1 Stop</option>
+        <option value="1">1.5 Stop</option>
+        <option value="2">2 Stop</option>
+    </select>
+-->
+<!--
+    <button style="float:right" class="btn btn-link" type="button" aria-expanded="true" onclic><span class="fa fa-cog"></span></button>
+-->
+    <button style="float:right" class="btn btn-link" type="button" aria-expanded="true" onclick="erase_console()"><span class="fa fa-eraser"></span></button>
+    <button style="float:right" class="btn btn-link" type="button" aria-expanded="true" onclick="toggle_scroll_lock()"><span class="fa fa-magnet"></span></button>
+</div>
+<div id="console" style="position:absolute;top:32px;bottom:32px;left:0;right:0;overflow:auto;font-family:monospace;font-size:12px"></div>
+<div id="console_footer" style="position:absolute;bottom:0px;height:32px;width:100%">
+    <div class="input-group" style="margin:0px;padding-top:4px;padding-left:4px;padding-right:32px;width:100%;box-sizing:border-box">
+        <input type="text" class="form-control" id="console_input" >
+    </div>
+    <!--<button style="position:absolute;right:4px;top:4px" class="btn btn-link" type="button" aria-expanded="true"><span class="fa fa-paragraph"></span></button>-->
+</div>
+<script type="text/javascript">
+
+var ztccmd=null;
+var scroll_lock = false
+var line_send = true
+
+function erase_console(){
+    $("#console").html("")
+}
+
+function toggle_scroll_lock(){
+    scroll_lock = !scroll_lock
+    if(scroll_lock) $(".fa-magnet").addClass("fa-flip-vertical")
+    else $(".fa-magnet").removeClass("fa-flip-vertical")
+}
+
+function open_console(baudrate,parity,stopbits){
+    ZTC.command(["device","open",console_alias],{
+        stderr: (line)=>{
+            if (line.startsWith("[fatal]")){
+                Z.log("----------------")
+                Z.log("Lost connection!")
+                Z.log("----------------")
+            }
+            console.log(line)
+        },
+        background:true
+    }).then((cmd)=>{
+        ztccmd=cmd
+        console.log("OK CONSOLE")
+        console.log(ztccmd.pid)
+    }).catch((err)=>{
+        Z.log("-----------------------")
+        Z.log("Error: "+err)
+        Z.log("-----------------------")
+        console.log(err)
+    })
+}
+
+function close_console(){
+    if(ztccmd) {
+        ztccmd.kill()
+        ztccmd = null
+    }
+}
+
+$(document).ready(function() {
+
+    ZConf.init()
+
+    var cons = $("#console")
+    var consrows = 0
+    var re = /(.*)(@\[([0-9A-F]{4}(?::[0-9A-F]{4})+)\])(.*)/
+    var entityMap = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': '&quot;',
+      "'": '&#39;',
+      "/": '&#x2F;',
+      " ": '&nbsp;'
+    };
+
+    function escapeHtml(string) {
+      return String(string).replace(/[&<>"'\/ ]/g, function (s) {
+        return entityMap[s];
+      });
+    }
+
+    Z.log = (msg)=>{
+        var match = re.exec(msg)
+        if (match && match.length>=1){
+            //except is injected by the parent window!
+            msg = '<a href="javascript:window.except(\''+match[2]+'\',\''+match[1]+'\')" class="exception">'+escapeHtml(msg)+"</a>"
+        } else {
+            msg = escapeHtml(msg)
+        }
+        //console.log(msg)
+        cons.append("<div>"+msg+"</div>")
+        consrows++
+        if(consrows>10000){
+            $("#console div").first().remove()
+        }
+        //scroll to bottom
+        var height = cons[0].scrollHeight;
+        if(!scroll_lock) cons.scrollTop(height)
+    }
+
+    open_console()
+
+    var mwin = nw.Window.get()
+    mwin.show();
+    mwin.focus();
+    mwin.on("close",function(){
+        //TODO: warning before closing
+        try {
+            console.log("CLOSING")
+            close_console()
+        } catch(err){
+            console.log(err)
+        }
+        mwin.close(true)
+    })
+
+    $("#console_title").html(console_title)
+    /*$(".selectpicker").selectpicker()
+    $("#baudrate").on("change",()=>{
+        var baud = $('#baudrate option:selected').val();
+        console.log(baud)
+    })*/
+
+    csend = function(data){
+        console.log("--->"+data)
+        ztccmd.stdin.write(data)
+    }
+
+    var toc = false;
+    $('#console_input').keypress(function(ev) {
+        if (!line_send) {
+            var me = this
+            me.value = String.fromCharCode(ev.charCode)
+            if (ev.keyCode == 13) csend("\n")
+            else csend(me.value+"\n")
+            if (toc) {
+                clearTimeout(toc);
+            } else toc = setTimeout(function() {
+                me.value = ""
+            }, 300)
+            return false
+        } else {
+            if (ev.keyCode == 13) {
+                //send val
+                csend(this.value+"\n")
+                this.value = ""
+            }
+            return true
+        }
+    })
+
+});
+
+</script>
+</body>
+</html>

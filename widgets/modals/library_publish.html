@@ -1,0 +1,372 @@
+<script>
+
+var LibraryPubModal = {
+  step:-1,
+  packs: [],
+  __fill: function(data){
+      var args = ["package","repository"]
+      var packs = []
+      ZTC.command(args,{
+        stdout: (line)=>{
+            try {
+                var js = JSON.parse(line)
+                packs = js
+                //PackageView.packages = js
+            } catch(err){
+                console.log(err)
+            }
+        }
+      }).then(()=>{
+        LibraryPubModal.packs = packs
+      }).catch((err)=>{
+        console.log(err)
+      })
+  },
+  __show: function(){
+      LibraryPubModal.step=-1;
+    $("#library_pub_modal").modal()
+      LibraryPubModal.next()
+  },
+  __err: function(msg){
+    $("#project_pub_error").html(msg)
+    $("#project_pub_modal .alert").show()
+  },
+  next: function(){
+    LibraryPubModal.step+=1;
+    var step = LibraryPubModal.step;
+    $(".pub_wiz").hide()
+    $("#pub_wiz"+step).show()
+    $("#pub_wiz_next").prop("disabled",true)
+    if(step==0){
+        //intro
+        $("#pub_wiz_next").prop("disabled",false)
+    }
+    else if(step==1){
+        //$("#github_frame").attr("src","https://github.com/login/oauth/authorize?client_id=99fdc1e39d8ce3051ce6&scope=user&state="+Store.profile.github.challenge)
+        //github auth
+        $("#pub_wiz1_error").hide()
+        $("#pub_wiz1_waiting").show()
+        LibraryPubModal.github_flow()
+    } else if(step==2){
+        //retrieve repo info
+        $("#pub_wiz2_waiting").show()
+        $("#pub_wiz2_chooser").hide()
+        LibraryPubModal.github_repo_choose() 
+    } else if(step==3){
+        var repo = LibraryPubModal.repos[$("#pub_wiz2_repo option:selected").val()]
+        $("#pub_wiz_next").prop("disabled",false)
+        $("#pub_wiz3_repo").html(repo.name)
+        console.log(Store.projects.current)
+        $("#pub_wiz3_project").html(Store.projects.current.info.title)
+        $("#pub_wiz3_version").html($("#pub_libversion").val().trim())
+    } else if(step==4){
+        //publish and thanks
+        var repo = LibraryPubModal.repos[$("#pub_wiz2_repo option:selected").val()]
+        var title = $("#pub_libtitle").val().trim()
+        var description = $("#pub_libdesc").val().trim()
+        var release = $("#pub_libchangelog").val().trim()
+        var version = $("#pub_libversion").val().trim()
+        var keywords = $("#pub_libkeys").tagsinput('items')
+        $("#pub_wiz4_waiting").show()
+        $("#pub_wiz4_result").hide()
+        $("#pub_wiz4_error").hide()
+        $("#pub_wiz4_url").attr("href",repo.url.replace("git://","https:/").replace(".git","/releases"))
+        LibraryPubModal.do_publish(repo,title,description,keywords,version,release)
+    } else {
+        $("#library_pub_modal").modal("hide")
+    }
+    
+  },
+  location_uncheck: function(){
+    if (LibraryPubModal.pub_timeout) {
+        console.log("Clear timeout")
+        clearInterval(LibraryPubModal.pub_timeout);
+        LibraryPubModal.pub_timeout = null
+        LibraryPubModal.timeout_stop=true
+    }
+
+    if (LibraryPubModal.pub_window) {
+        console.log("Close window")
+        LibraryPubModal.pub_window.window.close()
+        LibraryPubModal.pub_window = null
+    }
+  },
+  location_checker: function(callback){
+    var pub_timeout = LibraryPubModal.pub_timeout
+    var pub_timeout_stop = LibraryPubModal.pub_timeout_stop
+    var pub_window = LibraryPubModal.pub_window
+    if (!pub_timeout && !pub_timeout_stop){
+        LibraryPubModal.pub_timeout = setInterval(function(){
+            console.log("CHECK LOCATION!")
+            console.log(pub_window.window.document.location.href)
+            if(pub_window && pub_window.window.document.location.href.startsWith(ZConf.redirect.github)){
+                //TODO: check content & save token
+                console.log("BEFORE CHECK!")
+                var cnt = pub_window.window.document.body.innerHTML.replace(/(<([^>]+)>)/ig,"") //<pre> tags can be there
+                console.log(cnt)
+                var ok = false
+                var emsg=""
+                try {
+                    var res = JSON.parse(cnt)
+                    console.log(res)
+                    if (res.data && res.data.access_token) {
+                        ok = res.data
+                        emsg="ok"
+                    } else {
+                        emsg="failed authentication!"
+                    }
+                } catch(err) {
+                    emsg="unknown error"+err
+                }
+                LibraryPubModal.location_uncheck()
+                if (callback) callback(ok,emsg)
+            }
+        },100)
+    }
+  },
+  pub_window: null,
+  pub_timeout: null,
+  pub_timeout_stop: null,
+  pub_crd: null,
+  github_flow: function(){
+        
+    var callback = function(res,msg) {
+        if(!res){
+            $("#pub_wiz1_error").html(msg)
+            $("#pub_wiz1_error").show()
+        } else {
+            ZTC.command(["package","authorize","--token",res.access_token,"--user",res.user])
+                .then(()=>{LibraryPubModal.pub_crd=res;LibraryPubModal.next()})
+                .catch((err)=>{console.log(err); callback(false,"Can't save credentials to storage!")})
+        }
+    }
+    
+    if (!LibraryPubModal.pub_window) {
+        var x0,y0,x1,y1,x,y;
+        x0 = nw.Window.get().x;
+        y0 = nw.Window.get().y;
+        x1 = x0 + nw.Window.get().width;
+        y1 = y0 + nw.Window.get().height;
+        x = Math.round((x1+x0)/2 - 400)
+        y = Math.round((y1+y0)/2 - 300)
+        if(x<x0) x=x0
+        if(y<y0) y=y0
+
+        nw.Window.open(ZConf.oauth.github+Store.profile.github.challenge,{
+            title:"Github Auth",
+            frame:true,
+            width:800,
+            height:600,
+            x:x,
+            y:y},function(win){
+            win.on("closed", function(){
+                LibraryPubModal.pub_window=null
+                LibraryPubModa.location_uncheck()
+            })
+            LibraryPubModal.pub_window = win
+            //login_timeout_stop=false
+            LibraryPubModal.location_checker(callback)
+        })
+    }
+    },
+    github_repo_choose: function(){
+        var nfo;
+        $("#pub_wiz2_chooser").hide()
+        ZTC.command(["package","github"],{
+            stdout: (line)=>{
+                try{
+                    nfo=JSON.parse(line)
+                } catch (err){
+                    console.log(err)
+                }
+            }
+        }).then(()=>{
+            LibraryPubModal.repos = nfo.repos 
+            $("#pub_wiz2_waiting").hide()
+            var html=""
+            _.each(nfo.repos,(v,k,l)=>{
+                html='<option value="'+k+'" '+((k==(l.length-1))?"selected":"")+'>'+v.name+'</option>'+html 
+            })
+            var check_next = function(){
+                console.log("CHECK!")
+                console.log($("#pub_libtitle").val())
+                console.log($("#pub_libdesc").val())
+                console.log($("#pub_libkeys").val())
+                if( $("#pub_libtitle").val().trim() 
+                        && $("#pub_libdesc").val().trim() 
+                        && $("#pub_libkeys").val().trim()
+                        && $("#pub_libchangelog").val().trim()
+                        && $("#pub_libversion").val().trim()
+                    ){
+                    $("#pub_wiz_next").prop("disabled",false)
+                } else {
+                    $("#pub_wiz_next").prop("disabled",true)
+                }
+                 
+            }
+            $("#pub_libtitle").on("change paste keyup",check_next)
+            $("#pub_libdesc").on("change paste keyup",check_next)
+            $("#pub_libkeys").on("change paste keyup",check_next)
+            $("#pub_libchangelog").on("change paste keyup",check_next)
+            $("#pub_libversion").on("change paste keyup",check_next)
+            $("#pub_libkeys").tagsinput({
+              maxTags:5,
+              trimValue:true
+            })
+
+            $("#pub_wiz2_repo").html(html)
+            $("#pub_wiz2_repo").selectpicker("refresh")
+            $("#pub_wiz2_repo").on("change",()=>{
+                var selected = $('#pub_wiz2_repo option:selected').val();
+                $("#pub_wiz2_repoinfo").html("Publish repository <b>"+nfo.repos[selected].name+"</b> as Zerynth community library <b>"+nfo.repos[selected].import+"</b>")
+                console.log(LibraryPubModal.packs)
+                var rr = _.find(LibraryPubModal.packs,(v)=>{
+                    console.log(v)
+                    console.log(nfo.repos[selected])
+                    var rname = v.url.replace("github://","")
+                    return rname==nfo.repos[selected].name
+                }) 
+                if (rr) {
+                    //fill info
+                    $("#pub_libtitle").val(rr.title)    
+                    $("#pub_libdesc").val(rr.description)    
+                    _.each(rr.keywords,(v,k,l)=>{$("#pub_libkeys").tagsinput("add",v)})
+                    $("#pub_libkeys").tagsinput("refresh")
+                }
+                
+            })
+            $("#pub_wiz2_chooser").show()
+        }).catch((err)=>{
+            console.log(err)
+        })
+    },
+    do_publish: function(repo,title,description,keywords,version,release){
+        var tempfile = Z.path.join(ZConf.tempdir,"libpub.json")
+        var data = {
+            title:title,
+            description:description,
+            keywords:keywords,
+            version:version,
+            release:release
+        }
+        try {
+            Z.fs.writeFileSync(tempfile,JSON.stringify(data))
+            var args =["package","publish",repo.reponame,tempfile,"--automatic",Store.projects.current.path]
+            ZTC.command(args)
+                .then(()=>{
+                    $("#pub_wiz4_waiting").hide()
+                    $("#pub_wiz4_error").hide()
+                    $("#pub_wiz4_result").show()
+                    $("#pub_wiz_next").prop("disabled",false)
+
+                })
+                .catch((err)=>{
+                    $("#pub_wiz4_waiting").hide()
+                    $("#pub_wiz4_error").show()
+                    $("#pub_wiz4_result").hide()
+                    $("#pub_wiz_next").prop("disabled",false)
+                })
+        } catch(err){
+            Z.log("Error saving library info! "+err)
+        }
+    }
+
+}
+
+</script>
+<style>
+.pub_wiz {
+    display:none;
+}
+#github_frame {
+    width:100%;
+    max-height:600px;
+}
+</style>
+<div class="modal fade" id="library_pub_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">Publish Wizard</h4>
+      </div>
+      <div class="modal-body">
+          <div id="pub_wiz0" class="pub_wiz text-center">
+              Zerynth community libraries are stored in public Github repositories.<br><br>
+              In order to associate your Zerynth account with your Github account we need to have your authorization.
+              In the next step you will be requested to grant Zerynth permission to access your Github identity.
+          </div>
+          <div id="pub_wiz1" class="pub_wiz">
+            <p id="pub_wiz1_waiting">Waiting for Github Authorization...</p>
+            <p id="pub_wiz1_error">Something wrong while requesting Github Authorization!</p>
+          </div>
+          <div id="pub_wiz2" class="pub_wiz">
+            <div id="pub_wiz2_waiting">Retrieving your Github repositories...</div>
+            <div id="pub_wiz2_chooser">
+            <div class="text-center" style="margin-bottom:16px">Select the repository to be published</div>
+                <div class="text-center">
+                    <select class="selectpicker" id="pub_wiz2_repo">
+                    </select>
+                </div>
+                <div class="text-center" style="margin:16px" id="pub_wiz2_repoinfo"></div>
+              <form class="form-horizontal">
+                <div class="form-group">
+                  <label class="col-sm-3 control-label" for="textInput2-modal-markup">Title</label>
+                  <div class="col-sm-9">
+                    <input type="text" id="pub_libtitle" class="form-control" placeholder="Enter the library title">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-3 control-label" for="textInput2-modal-markup">Description</label>
+                  <div class="col-sm-9">
+                    <textarea id="pub_libdesc" class="form-control" rows=3 placeholder="Enter a short library description"></textarea>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-3 control-label" for="textInput2-modal-markup">Keywords</label>
+                  <div class="col-sm-9">
+                    <input type="text" id="pub_libkeys" class="form-control" data-role="tagsinput" placeholder="Enter descriptive keywords, comma separated">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-3 control-label" for="textInput2-modal-markup">New version</label>
+                  <div class="col-sm-9">
+                    <input type="text" id="pub_libversion" class="form-control" placeholder="Enter new version tag (e.g. r1.0.0)">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-3 control-label" for="textInput2-modal-markup">Changelog</label>
+                  <div class="col-sm-9">
+                    <textarea id="pub_libchangelog" class="form-control" rows=3 placeholder="Enter a description of what has changed in this version"></textarea>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div id="pub_wiz3" class="pub_wiz text-center">
+              Before publishing this library, please review the relevant info <a href="https://docs.zerynth.com/latest/official/core.zerynth.docs/gettingstarted/docs/index.html#library-publishing" target="_blank">here</a>.<br><br>  We strongly suggest to manage your Github repository from the command line, reviewing all the changes before pushing them to the master branch.<br><br>
+                However, if you would like Zerynth Studio to push the current project to your repository, click Next.<br><br>
+                Please double check the following info before proceeding!<br><br>
+                <div><b>Github Repository:</b>&nbsp;<span id="pub_wiz3_repo" class="label label-warning"></span></div><br>
+                <div><b>Project to publish:</b>&nbsp;<span id="pub_wiz3_project" class="label label-warning"></span></div><br>
+                <div><b>New version:</b>&nbsp;<span id="pub_wiz3_version" class="label label-warning"></span></div><br>
+          </div>
+          <div id="pub_wiz4" class="pub_wiz">
+            <div id="pub_wiz4_waiting" class="text-center">Publishing...<div class="spinner spinner-xs"></div></div>
+            <div id="pub_wiz4_result" class="text-center">
+            <h2>DONE!</h2>
+
+            Congrats for reaching this point! Zerynth recognizes your <a href="" id="pub_wiz4_url" target="_blank">Github repository releases</a> as different versions and makes them available to the community. You will receive an automated email as soon as the new release is detected.
+            </div>
+            <p id="pub_wiz4_error" class="text-center">Something has gone wrong! Please check the logs and retry. If the issue persists, contact us!</p>
+          </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" id="pub_wiz_next" class="btn btn-primary" onclick="LibraryPubModal.next()">Next</button>
+      </div>
+    </div>
+  </div>
+</div>

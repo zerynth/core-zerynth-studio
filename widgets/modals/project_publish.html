@@ -1,0 +1,512 @@
+<script>
+
+var ProjectPubModal = {
+  nss: [],
+  curcb: null,
+  curwiz:-1,
+  __fill: function(data){
+  },
+  __check_git: function(cb){
+    var prj = Store.projects.current
+    if (!prj.info.git_url){
+        Z.log("Project is not stored on Zerynth backend, creating repository...")
+        ProjectView.git_init((res)=>{
+          if(res) cb()
+          else cb("Can't create project repository!")
+        })
+        // ZNotify.wait("Creating remote repository...")
+        // ZTC.prj_git_init(prj.path)
+        //   .then(()=>{
+        //       ZNotify.done()
+        //       cb()
+        //     })
+        //     .catch((err)=>{
+        //       ZNotify.done(err)
+        //       cb("Can't create project repository!")
+        //     })
+    } else cb()
+  },
+  __pack_extend: function(data){
+    _.each(data,(v,k,l)=>{
+      if (!_.has(ProjectPubModal.package,k)) ProjectPubModal.package[k]=v
+    })
+  },
+  __pack_info: function(fullname,cb,repo,last_version){
+      var prj = Store.projects.current
+      ZTC.zpm_sync()
+          .then(()=>{
+            ZTC.zpm_info(fullname)
+              .then((nfo)=>{
+                if (nfo.fullname){
+                  //got packet
+                  ProjectPubModal.package = nfo
+                } else {
+                  //first publishing or package in queue
+     
+                  if (Z.fs.existsSync(Z.path.join(prj.path,"package.json"))){
+                    //load from package.json
+                    var cc = Z.fs.readFileSync(Z.path.join(prj.path,"package.json"),{encoding:"utf8"})
+                    ProjectPubModal.package = JSON.parse(cc)
+                    ProjectPubModal.package.last_version = ProjectPubModal.package.version
+                  } else {
+                    ProjectPubModal.package = {
+                      fullname: fullname,
+                      //repository: repo
+                    }
+                    if (repo) ProjectPubModal.package.repo=repo
+                    if (last_version) ProjectPubModal.package.last_version=last_version
+                  }
+                }
+                cb()
+              })
+              .catch((err)=>{
+                cb("Can't retrieve library info!")
+              })
+          })
+          .catch((err)=>{
+             cb("Can't sync package database!")
+          })
+  },
+  __check_fullname: function(cb){
+    var prj = Store.projects.current
+    if (prj.info.package){
+      ProjectPubModal.__pack_info(prj.info.package.fullname,cb,prj.info.package.repo,prj.info.package.version)
+    } else {
+      //no fullname, choose it
+      ZTC.get_namespaces()
+      .then((nss)=>{
+        ProjectPubModal.nss=nss
+        ProjectPubModal.choose_fullname(cb)
+      })
+      .catch((err)=>{
+        cb("Can't retrieve namespace list!")
+      })
+    }
+  },
+  prmpt: null,
+  new_namespace: function(){
+      var result = $("#pub_namespace_new").val().trim().toLowerCase()
+      if (result=="") {
+        return
+      }
+      ZTC.create_namespace(result.trim().toLowerCase())
+      .then(()=>{
+          bootbox.hideAll()
+          ZTC.get_namespaces()
+            .then((nss)=>{
+              ProjectPubModal.nss=nss
+              ProjectPubModal.set_namespaces()
+              $("#pub_namespace_form").hide()
+            })
+            .catch((err)=>{
+              bootbox.alert("Can't retrieve namespace list!")
+            })
+      })
+      .catch((err)=>{
+          ProjectPubModal.__err("Can't create namespace!")
+      })
+  },
+  __refresh_wiz0: function(ignore_ns){
+    var repo = $("#pub_repository option:selected").val()
+    var ns = $("#pub_namespace option:selected").val()
+    var libname = $("#pub_libname").val()
+    $("#pub_namespace_form").hide()
+    if(!ignore_ns && ns.startsWith("Create")){
+      $("#pub_namespace_form").show()
+      //new namespace
+      // $("#project_pub_modal").modal("hide")
+      // if (!ProjectPubModal.prmpt) {
+      //   ProjectPubModal.prmpt = bootbox.prompt({
+      //     size:"small",
+      //     title:"Enter the namespace:",
+      //     callback:function(result){
+      //         if (result===null){
+      //             bootbox.hideAll()
+      //         } else {
+      //             ZTC.create_namespace(result.trim().toLowerCase())
+      //             .then(()=>{
+      //                 bootbox.hideAll()
+      //                 ZTC.get_namespaces()
+      //                   .then((nss)=>{
+      //                     ProjectPubModal.nss=nss
+      //                     ProjectPubModal.set_namespaces()
+      //                     $("#project_pub_modal").modal()
+      //                   })
+      //                   .catch((err)=>{
+      //                     $("#project_pub_modal").modal()
+      //                     bootbox.alert("Can't retrieve namespace list!")
+      //                   })
+      //             })
+      //             .catch((err)=>{
+      //                 bootbox.hideAll()
+      //                 $("#project_pub_modal").modal()
+      //                 bootbox.alert("Can't create namespace "+result)
+      //             })
+      //         }
+      //     }
+      //   })
+      // } else {
+      //   ProjectPubModal.prmpt.modal()
+      // }
+    } else {
+      $("#pub_fullname").html("lib."+ns+"."+libname)
+      $("#pub_importname").html("from "+repo+"."+ns+"."+libname+" import ...")
+    }
+  },
+  set_namespaces: function(){
+    //get namespaces
+    var nss = _.map(ProjectPubModal.nss,(v,k,l)=>{return v.name})
+    nss.sort()
+    html=""
+    nss.push("")
+    nss.push("Create new...")
+    _.each(nss,(v,k,l)=>{ html+='<option value="'+v+'">'+v+'</option>'})
+    $("#pub_namespace").html(html)
+    var picker_n = $("#pub_namespace")
+    picker_n.selectpicker("refresh")
+    picker_n.on("change",()=>{
+      ProjectPubModal.__refresh_wiz0()
+    })
+  }
+  , 
+  choose_fullname: function(cb){
+    ProjectPubModal.curcb=cb
+    $("#project_pub_modal .wizpage").hide()
+
+    //set pickers
+    $("#pub_wizpage0 .selectpicker").selectpicker()
+    
+    //get repositories
+    var reps = (Store.profile) ? (Store.profile.repositories):(["community"])
+    reps = _.without(reps,"official")
+    reps.sort()
+    var html=""
+    _.each(reps,(v,k,l)=>{ html+='<option value="'+v+'">'+v+'</option>'})
+    $("#pub_repository").html(html)
+    var picker_r = $("#pub_repository")
+    picker_r.selectpicker("refresh")
+    picker_r.on("change",()=>{
+      ProjectPubModal.__refresh_wiz0()
+    })
+
+    ProjectPubModal.set_namespaces()
+    
+    //clear libname
+    $("#pub_libname").html("")
+    $("#pub_libname").on("keyup",()=>{
+      ProjectPubModal.__refresh_wiz0(true)
+    })
+    $("#pub_fullname").html("")
+    $("#pub_importname").html("")
+
+
+    ProjectPubModal.curwiz=0;
+    $("#project_pub_modal #pub_wizpage0").show()
+    $("#project_pub_modal").modal()
+  },
+  __check_package: function(cb){
+    ProjectPubModal.curcb=cb
+    ProjectPubModal.curwiz=1;
+    console.log("CHECKING PACKAGE")
+    console.log(ProjectPubModal.package)
+    if(ProjectPubModal.package.title) {
+      //skip this step, package don't need details
+      cb()
+      return
+    }
+    $("#project_pub_modal .wizpage").hide()
+    $("#pub_libkeys").tagsinput({
+      maxTags:5,
+      trimValue:true
+    })
+    $("#project_pub_modal #pub_wizpage1").show()
+    $("#project_pub_modal").modal()
+  },
+  __check_version: function(cb){
+    var prj = Store.projects.current
+    ProjectPubModal.curcb=cb
+    ProjectPubModal.curwiz=2;
+    $("#project_pub_modal .wizpage").hide()
+
+    var pack = ProjectPubModal.package
+    var versions = []
+    if (pack.last_version){
+      var vrs = pack.last_version.substr(1)
+      vrs = vrs.split(".")
+      versions=[
+        "r"+(vrs[0])+"."+(vrs[1])+"."+(parseInt(vrs[2])+1), //patch changes
+        "r"+(vrs[0])+"."+(parseInt(vrs[1])+1)+".0", //minor changes
+        "r"+(parseInt(vrs[0])+1)+".0.0", //major changes
+      ]
+    } else versions=["r1.0.0","r0.0.1"]
+
+    //Calculate dependencies
+    var pyfiles = Z.glob.sync(Z.path.join(prj.path,"*.py"))
+    var modules = {}
+    Z.async.eachSeries(pyfiles,(py,ccb)=>{
+      ZTC.find_imports(py)
+        .then((res)=>{
+          var mods = res[0]
+          var notfound = res[1]
+          if(notfound.length>0){
+            ccb("Some modules are missing!")
+          } else {
+            modules = _.extend(modules,mods)
+            ccb()
+          }
+        })
+        .catch((err)=>{
+          ccb("Can't calculate project dependencies! There is probably a compilation error")
+        })
+    },(err)=>{
+      if(err){
+        cb(err)
+      } else {
+        ZTC.zpm_query("*","lib",true)
+          .then((installed)=>{
+            var deps = {}
+            // get dependencies from paths
+            var ok = _.find(modules,(v,k,l)=>{
+                console.log("Checking "+k)
+                var pthres = Z.shift_until(k,["stdlib","libs"])
+                var pth = pthres[0]
+                var shifted = pthres[1]
+                console.log(pth)
+                console.log(shifted)
+                var vrs = shifted[shifted.length-1]
+                console.log(vrs)
+                if (pth.length){
+                  if(pth[0]=="stdlib") deps["core.zerynth.stdlib"]=vrs
+                  else {
+                    var repo = pth[1] //pth[0] is "libs"
+                    var fullname = "lib."+pth[2]+"."+pth[3]
+                    console.log("FULL "+fullname)
+                    console.log(installed)
+                    var pp = _.find(installed,(vv)=>{return vv.fullname==fullname})
+                    if (!pp){
+                      return true
+                    } else {
+                      deps[fullname]=pp.last_version
+                    }
+                  }
+                  return false
+                } else {
+                  return true
+                } 
+            })
+            if (ok){
+              cb("Error calculating project dependencies! Can't find "+ok+"! Remember that projects importing from other projects can't be published.")
+            } else {
+              ProjectPubModal.__pack_extend({dependencies:deps})
+              $("#pub_wizpage2 .selectpicker").selectpicker()
+              $("#pub_versions").html($.templates('<option value="{{>#data}}">{{>#data}}</option>').render(versions))
+              $("#pub_versions").selectpicker("refresh")
+              $("#pub_deps").html($.templates('<tr><td>{{>#data[0]}}</td><td>{{>#data[1]}}</td></tr>').render(_.pairs(deps)))
+              $("#pub_whatsnew").html("")
+              $("#project_pub_modal #pub_wizpage2").show()
+              $("#project_pub_modal").modal()
+            }
+          })
+          .catch((err)=>{
+            cb("Can't retrieve installed packages list!"+err)
+          })
+        
+      }
+    })
+  },
+  __publish: function(cb){
+    cb()
+  },
+  __show: function(){
+    var prj = Store.projects.current
+    if(!prj) return;
+    ProjectPubModal.package=null
+    var wiz = [
+      {fn:ProjectPubModal.__check_git,name:"GIT"},
+      {fn:ProjectPubModal.__check_fullname,name:"FULLNAME"},
+      {fn:ProjectPubModal.__check_package,name:"PACKAGE"},
+      {fn:ProjectPubModal.__check_version,name:"VERSION"}
+    ]
+    Z.async.eachSeries(wiz,(w,cb)=>{
+      w.fn(cb)
+    },
+    (err)=>{
+      //finish!
+      $("#project_pub_modal").modal("hide")
+      if(err) {
+        Z.log("ERROR: "+err)
+        return
+      }
+      //write package.json
+      Z.fs.writeFileSync(Z.path.join(prj.path,"package.json"),JSON.stringify(ProjectPubModal.package,null,4),{encoding:'utf8'})
+      ZNotify.wait("Publishing...")
+      ZTC.publish(prj,ProjectPubModal.package.version)
+        .then(()=>{
+          ZNotify.done()
+        })
+        .catch((err)=>{
+          ZNotify.done()
+        })
+    })
+  },
+  __err: function(msg){
+    $("#project_pub_error").html(msg)
+    $("#project_pub_modal .alert").show()
+  },
+  next: function() {
+    var curwiz = ProjectPubModal.curwiz;
+    $("#project_pub_modal .alert").hide()
+    if(curwiz==0){
+      //next from fullname step
+      //check fullname
+      var ns = $("#pub_namespace option:selected").val()
+      var pubname = $("#pub_libname").val()
+      var repo = $("#pub_repository option:selected").val()
+      if (ns.startsWith("Create") || ns==""){
+        ProjectPubModal.__err("Invalid Namespace!")
+      } else if (!pubname.match(/^[a-z][0-9a-z_]{2,31}$/g)){
+        ProjectPubModal.__err("Invalid Library Name! Only lowercase letters, numbers and underscores are allowed.")
+      } else {
+        var fullname = "lib."+ns+"."+pubname
+        ProjectPubModal.__pack_info(fullname,ProjectPubModal.curcb,repo)
+      }
+    } else if(curwiz==1){
+      //package details
+      var keys = $("#pub_libkeys").tagsinput('items')
+      var title = $("#pub_libtitle").val().trim()
+      var desc = $("#pub_libdesc").val().trim()
+      if(title.length<3){
+        ProjectPubModal.__err("Invalid Title!")
+      } else {
+        ProjectPubModal.__pack_extend({
+          keywords: keys,
+          title:title,
+          description:desc
+        })
+        ProjectPubModal.curcb()
+      }
+    } else if(curwiz==2){
+      //version
+      var wn = $("#pub_whatsnew").val().trim()
+      var version = $("#pub_versions option:selected").val()
+      ProjectPubModal.package.whatsnew=wn
+      ProjectPubModal.package.version=version
+      ProjectPubModal.curcb()
+    } 
+  }
+}
+
+</script>
+<script id="project_pub_option" type="text/x-jsrender">
+<option></option>
+</script>
+
+
+<script id="project_modal_clone_row" type="text/x-jsrender">
+<tr>
+  <td><input type="radio" value="{{:index}}" name="prjc" {{if index==0}}checked{{/if}}></td>
+  <td>{{:title}}</td>
+  <td>{{:description}}</td>
+  <td>{{:last_modification}}</td>
+  <td>{{: published || "--"}}</td>
+</tr>
+</script>
+
+<div class="modal fade" id="project_pub_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">Publish Wizard</h4>
+      </div>
+      <div class="modal-body">
+        <div class="wizpage" id="pub_wizpage0">
+          <p style="text-align: center">Choose library repository, namespace and name</p>
+          <form class="form-horizontal">
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="textInput-modal-markup">Repository</label>
+              <div class="col-sm-9">
+                <select class="selectpicker" id="pub_repository"></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="textInput2-modal-markup">Namespace</label>
+              <div class="col-sm-9">
+                <select class="selectpicker" id="pub_namespace"></select>
+              </div>
+            </div>
+            <div class="form-group" id="pub_namespace_form" style="display:none">
+              <label class="col-sm-3 control-label" for="textInput2-modal-markup">Namespace</label>
+              <div class="col-sm-6">
+                <input type="text" id="pub_namespace_new" class="form-control">
+              </div>
+              <div class="col-sm-3">
+                <button type="button" class="btn btn-primary" onclick="ProjectPubModal.new_namespace()">Ok</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="textInput2-modal-markup">Library Name</label>
+              <div class="col-sm-9">
+                <input type="text" id="pub_libname" class="form-control">
+              </div>
+            </div>
+          </form>
+          <div style="text-align: center">
+            <p id="pub_fullname" style="font-family:monospace"></p>
+            <p id="pub_importname" style="font-family:monospace"></p>
+          </div>
+        </div>
+        <div class="wizpage" id="pub_wizpage1">
+          <p style="text-align: center">Fill in the Library details</p>
+          <form class="form-horizontal">
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="textInput2-modal-markup">Title</label>
+              <div class="col-sm-9">
+                <input type="text" id="ppub_libtitle" class="form-control" placeholder="Enter the library title">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="textInput2-modal-markup">Description</label>
+              <div class="col-sm-9">
+                <textarea id="ppub_libdesc" class="form-control" rows=3 placeholder="Enter a short library description"></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="textInput2-modal-markup">Keywords</label>
+              <div class="col-sm-9">
+                <input type="text" id="ppub_libkeys" class="form-control" data-role="tagsinput" placeholder="Enter descriptive keywords, comma separated">
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="wizpage" id="pub_wizpage2">
+          <p style="text-align: center">Version and Changelog</p>
+          <form class="form-horizontal">
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="textInput2-modal-markup">What's new</label>
+              <div class="col-sm-9">
+                <input type="text" id="pub_whatsnew" class="form-control" placeholder="Enter changes from previous version">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label" for="textInput2-modal-markup">Version</label>
+              <div class="col-sm-9">
+                <select class="selectpicker" id="pub_versions"></select>
+              </div>
+            </div>
+          </form>
+          <p style="text-align: center">Dependencies</p>
+          <table class="table table-striped table-bordered" id="pub_deps" style="max-height: 600px;padding:4px"></table>
+        </div>
+        <div class="alert alert-danger" style="display:none">
+          <span class="pficon pficon-error-circle-o"></span><p  id="project_pub_error"></p>
+        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="ProjectPubModal.next()">Next</button>
+      </div>
+    </div>
+  </div>
+</div>

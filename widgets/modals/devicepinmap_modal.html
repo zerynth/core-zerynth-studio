@@ -1,0 +1,70 @@
+<script>
+
+var DevicePinmapModal = {
+  dev: null,
+  __fill: function(data){
+    DevicePinmapModal.dev = data
+    var svgpath = "file://"+Z.path.join(data.path,"svg", data.target+".svg").replace(/ /g, '%20')
+    $('#pinmapselector input:radio[name="options"]').change(function(){
+            if (this.value==0){
+              $("#pin_x5F_comm").hide()
+              $("#pin_x5F_io").show()
+            } else {
+              $("#pin_x5F_comm").show()
+              $("#pin_x5F_io").hide()
+            }
+        })
+    $("#pinmapSvg").load(svgpath, function() {
+        $('#devicepinmap_modal').on('shown.bs.modal', function(e) {
+            $("#pinmapSvg > svg").height("100%");
+            $("#pinmapSvg > svg").width("100%");
+            $("#pinmapSvg").height($("body").height()-200);
+            svgPanZoom('#pinmapSvg > svg', {
+                viewportSelector: "#pinmapSvg",
+                    fit: true
+                })
+            $('#pinoptbtn2').click()
+            $('#pinoptbtn1').click()
+        })
+    })
+  },
+  __show: function(){
+    $("#devicepinmap_modal").modal()
+  },
+  __hide: function(){
+    $("#devicepinmap_modal").modal("hide")
+  }
+}
+
+</script>
+
+
+<div class="modal fade" id="devicepinmap_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog"  style="width:80%">
+    <div class="modal-content" >
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">Device Info</h4>
+      </div>
+      <div class="modal-body">
+        <div id="pinmapSvg" class="tooltip-tl" title="drag and zoom with the mousewheel"></div>
+      </div>
+      <div class="modal-footer">
+        <div style="text-align:left;display:inline;float:left">
+                Pinmap Select:
+                <div class="btn-group" data-toggle="buttons" id="pinmapselector">
+                      <label class="btn btn-primary active tooltip-br" title="Single pin input/output" id="pinoptbtn1">
+                        <input type="radio" name="options" id="pinopt1" autocomplete="off" value="0" checked>IO
+                      </label>
+                      <label class="btn btn-primary tooltip-br" title="Communication Peripherals" id="pinoptbtn2">
+                        <input type="radio" name="options" id="pinopt2" autocomplete="off" value="1">Peripherals
+                      </label>
+                </div>
+        </div>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>

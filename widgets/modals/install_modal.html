@@ -1,0 +1,98 @@
+<script>
+
+var InstallModal = {
+  fullname: null,
+  version: null,
+  need_reboot: false,
+  installing: false,
+  __fill: function(pack){
+    InstallModal.pack = pack
+    $("#install_modal_title").html("Install "+pack.fullname)
+    $("#install_modal_name").html(pack.title)
+    $("#install_modal_fullname").html(pack.fullname)
+    $("#install_modal_url").html('<a href="javascript:App.pack_community_doc(\''+pack.url+'\')" target="_blank">'+pack.url.replace("github://","https://github.com/")+'</a>')
+    $("#install_modal_description").html(pack.description)
+    $("#install_modal_whatsnew").html(pack.vinfo[pack.last_version].changelog+"<br>"+pack.vinfo[pack.last_version].date)
+    var html = ""
+    _.each(pack.versions,(v,k,l)=>{
+        html='<option value="'+v+'" '+((k==(l.length-1))?"selected":"")+'>'+v+'</option>'+html 
+    })
+    $("#install_modal_version").html(html)
+    $("#install_modal_version").selectpicker("refresh")
+    $("#install_modal .alert-warning").hide()
+    $("#install_modal_version").on("change",()=>{
+        var selected = $('#install_modal_version option:selected').val();
+        $("#install_modal_whatsnew").html(pack.vinfo[selected].changelog+"<br>"+pack.vinfo[selected].date)
+    })
+  },
+  __err: function(msg){
+    $("#install_modal_error").html(msg)
+    $("#install_modal .alert-danger").show()
+  },
+  __hide: function(){
+    $("#install_modal").modal("hide")
+  },
+  __show: function(){
+    $("#install_modal").modal()
+  },
+  install: function(){
+    if (InstallModal.installing) {
+      InstallModal.__err("An installation is ongoing, please wait for it to finish!")
+      return
+    }
+    InstallModal.__hide()
+    InstallModal.installing=true
+    ZNotify.wait("Installing...")
+    var version = $("#install_modal_version option:selected").val()
+    ZTC.zpm_install(InstallModal.pack.fullname,version)
+      .then(()=>{
+        ZNotify.done("Install done!")
+        Z.log("Installation ok")
+        InstallModal.installing=false
+        Bus.dispatch("package_installed")
+      })
+      .catch((err)=>{
+        Z.log("Installation failed:"+err)
+        ZNotify.done("Install failed")
+        InstallModal.installing=false
+      })
+  }
+}
+
+</script>
+
+<!-- HTML -->
+<div class="modal fade" id="install_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="install_modal_title"></h4>
+      </div>
+      <div class="modal-body">
+        <b><div id="install_modal_name"></div></b>
+        <div id="install_modal_fullname" class="zpm_pack_fullname"></div>
+        <div id="install_modal_url" class="zpm_pack_fullname"></div>
+        <div id="install_modal_description" class="zpm_pack_desc" style="max-height: 200px"></div>
+        <div class="text-center" id="version_selector">
+            <select class="selectpicker" id="install_modal_version">
+            </select>
+        </div>
+        <b>What's new:</b>
+        <div id="install_modal_whatsnew" class="zpm_pack_desc" style="max-height: 200px"></div>
+        <div class="alert alert-danger" style="display:none;margin-top:12px">
+          <span class="pficon pficon-error-circle-o"></span><p id="install_modal_error"></p>
+        </div>
+        <div class="alert alert-warning" style="display:none;margin-top:12px">
+          <span class="pficon pficon-warning-triangle-o"></span><p id="install_modal_warning"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="InstallModal.install()">Install</button>
+      </div>
+    </div>
+  </div>
+</div>

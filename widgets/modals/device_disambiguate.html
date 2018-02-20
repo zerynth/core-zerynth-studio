@@ -1,0 +1,53 @@
+<script>
+
+var DeviceDisambiguator = {
+  devs: [],
+  __fill: function(data){
+    var picker = $("#disambiguate_picker")
+    picker.empty()
+    picker.html(
+      $.templates('<option value="{{:hash}}">{{:name}}</option>').render(data)
+      )
+    picker.selectpicker("refresh")
+    DeviceDisambiguator.devs = data
+  },
+  __show: function(){
+    $("#disambiguate_modal").modal()
+  },
+  create: function(){
+    var selected=$("#disambiguate_picker option:selected").val()
+    var dev = _.find(DeviceDisambiguator.devs,(item)=>{return item.hash==selected})
+    ZDevices.set_alias(dev)
+    $("#disambiguate_modal").modal("toggle")
+    ZDevices.redraw()
+  }
+}
+
+</script>
+<div class="modal fade" id="disambiguate_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">Disambiguate Device</h4>
+      </div>
+      <div class="modal-body">
+        <p style="text-align: center">What kind of device you plugged in?</p>
+        <div style="text-align: center">
+        <select class="selectpicker" id="disambiguate_picker">
+        </select>
+        </div>
+        <p style="text-align: center;font-size:9px;margin-top:16px">Some device signatures can be ambiguous and associated to many different devices.<br/> A disambiguation is in order to associate the device signature to a specific device type.</p>
+        <div class="alert alert-danger" style="display:none">
+          <span class="pficon pficon-error-circle-o" ></span><p id="disambiguate_error"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="DeviceDisambiguator.create()">Disambiguate</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,236 @@
+<script>
+
+var ZButtonModal = {
+  dev: null,
+  vms: null,
+  chipid: null,
+  __fill: function(data){
+    ZButtonModal.chipid = null
+    ZButtonModal.dev = null
+    ZButtonModal.vms = null
+    ZButtonModal.dev = data.dev
+    ZButtonModal.info=false
+    var dev = data.dev
+    $("#zbutton_device_box").hide()
+    $("#zbutton_register_box").hide()
+    $("#zbutton_createvm_box").hide()
+    $("#zbutton_virtualize_box").hide()
+    //check device
+    console.log(dev)
+    if (!dev.chipid && dev.linked_devs && !_.isEmpty(dev.linked_devs)) {
+        //no_sid device with more than one previously registered target: need to choose one or register again
+        $("#zbutton_device_box").show()
+        $("#zbutton_device_info").html("Is this a previously registered device or a new one?")
+        var picker = $("#zbutton_device_select")
+        picker.empty()
+        picker.unbind("change")
+        picker.html('<option value="0" selected>New Device</option>'+$.templates('<option value="{{:chipid}}">{{:name}}</option>').render(_.values(dev.linked_devs)))
+        if (ZButtonModal.chipid) picker.selectpicker("val",ZButtonModal.chipid)
+        else picker.selectpicker("val","0")
+        picker.selectpicker("refresh")
+        picker.on("change",function(){
+          var selected = $('#zbutton_device_select option:selected').val();
+          console.log(selected)
+          picker.selectpicker("val",selected)
+          if (selected=="0") {
+            //new device
+            ZButtonModal.chipid=null
+            ZButtonModal.adjust()
+          } else {
+            console.log("DEV2!")
+            console.log(dev.linked_devs)
+            ZButtonModal.dev=dev.linked_devs[dev.target+":"+selected] //change dev to obtain correct alias
+            console.log("DEV!")
+            console.log(ZButtonModal.dev)
+            ZButtonModal.chipid=selected
+            ZButtonModal.adjust()
+          }
+        })
+        ZButtonModal.info=true
+        ZButtonModal.adjust()
+        $("#zbutton_register_box").show()
+    } else if(!dev.chipid) {
+        //unregistered device
+        ZButtonModal.chipid=null
+        ZButtonModal.adjust()
+    } else {
+        //registered device
+        ZButtonModal.chipid = dev.chipid
+        ZButtonModal.adjust()
+    }
+  },
+  adjust_title: function(){
+    if (ZButtonModal.chipid){
+      $("#zbutton_modal_title").html("Virtualization of "+ZButtonModal.dev.name+" ("+ZButtonModal.chipid+")")
+    } else if (ZButtonModal.info){
+      $("#zbutton_modal_title").html("Virtualization Wizard")
+    } else {
+      $("#zbutton_modal_title").html("Registration of "+ZButtonModal.dev.name+" (unknown id)")
+    }
+  },
+  adjust: function(){
+    var chipid = ZButtonModal.chipid
+    var target = ZButtonModal.dev.target
+    ZButtonModal.adjust_title()
+    $("#zreg_button").hide()
+    if (chipid){
+            Store.action("virtualizing",true)
+            ZNotify.wait("Loading VM list...")
+            ZTC.command(["info","--vms",target+":"+chipid],{
+                stdout:(line)=>{
+                    Store.vms=JSON.parse(line)
+                }
+            })
+            .then(()=>{
+                    Store.action("virtualizing",false)
+                    $("#zbutton_register_box").hide()
+                    $("#zreg_button").show()
+                    $("#zbutton_createvm_text").html("You can create additional Virtual Machines for this device")
+                    var vmn = _.flatten(_.map(Store.vms, function(v,k,l){
+                                    return _.values(v)
+                                })).length
+                    if (vmn==1){
+                      $("#zbutton_virtualize_text").html('There is <span class="badge" id="zbutton_badge" style="background:#468c8c;margin:0">'+vmn+'</span> Virtual Machine created for this device')
+                      $("#zbutton_virtualize_box").show()
+                    } else if (vmn>1) {
+                      $("#zbutton_virtualize_text").html('There are <span class="badge" id="zbutton_badge" style="background:#468c8c;margin:0">'+vmn+'</span> Virtual Machine created for this device')
+                      $("#zbutton_virtualize_box").show()
+                    } else {
+                      $("#zbutton_virtualize_box").hide()
+                      $("#zbutton_createvm_text").html("You must create a Virtual Machine for this device to virtualize it")
+                    }
+                    $("#zbutton_createvm_box").show()
+                    ZNotify.done()
+            })
+            .catch((err)=>{
+                Z.log("Error searching for vms: "+err)
+                ZNotify.done()
+                Store.action("virtualizing",false)
+                ZButtonModal.__hide()
+            })
+
+    } else {
+      //no chipid, go to registration
+      $("#zbutton_register_box").show()
+      $("#zbutton_createvm_box").hide()
+      $("#zbutton_virtualize_box").hide()
+    }
+  },
+  __show: function(){
+    $("#zbutton_modal").modal()
+  },
+  __hide: function(){
+    $("#zbutton_modal").modal("hide")
+  },
+  register: function(){
+    ZNotify.wait("Registering device...")
+    ZButtonModal.__hide()
+    Store.action("virtualizing",true)
+    ZNotify.alert("Registering, please wait...","Registering device","info",true)
+    ZTC.command(["device","register",ZButtonModal.dev.alias],{
+      stdout: (line)=>{
+          Z.log(line)
+              if (line.includes("reset the device")){
+                  ZNotify.alert_timeout("Please Reset the Device!","Device Reset needed","info",5000)
+              }
+          }
+      })
+        .then(()=>{
+            Store.action("virtualizing",false)
+            ZNotify.unalert()
+            ZNotify.done()
+            Z.log("Registration successful! Now you can virtualize your "+ZButtonModal.dev.target)
+            ZDevices.disambiguate()
+            //Dialogs.modal("VirtualizeModal",_.values(Store.vms[dev.target]))
+        })
+        .catch((err)=>{
+            ZNotify.unalert()
+            ZNotify.done("Error")
+            Store.action("virtualizing",false)
+        })
+  },
+  createvm: function(){
+    var target = ZButtonModal.dev.target
+    ZTC.vmlist(target)
+        .then((vms)=>{
+            ZButtonModal.__hide()
+            Dialogs.modal("CreateVMModal",{dev:ZButtonModal.dev,vms:vms,callback:() =>{ZButtonModal.__show(); ZButtonModal.adjust()}})
+        })
+        .catch((err)=>{
+            ZButtonModal.__hide()
+            Z.log("Error retrieving vm list")
+        })
+  },
+  virtualize: function(){
+    var chipid = ZButtonModal.chipid
+    var target = ZButtonModal.dev.target
+    ZButtonModal.__hide()
+    Dialogs.modal("VirtualizeModal",Store.vms[target][chipid])
+  }
+}
+
+</script>
+<div class="modal fade" id="zbutton_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog" style="min-width: 40%;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="zbutton_modal_title">Virtualization Wizard</h4>
+      </div>
+      <div class="modal-body">
+        <div id="zbutton_device_box">
+          <h2>Device info</h2>
+          <div class="row">
+            <div class="col-sm-6">
+              <p id="zbutton_device_info"></p>
+            </div>
+            <div class="col-sm-6" style="text-align:center">
+              <select id="zbutton_device_select" class="selectpicker" data-width="90%"></select>
+            </div>
+          </div>
+        </div>
+        <div id="zbutton_register_box">
+          <h2>Register device</h2>
+          <div class="row">
+            <div class="col-sm-9">
+              <p id="zbutton_register_text">This device needs to be registered before virtualization</p>
+            </div>
+            <div class="col-sm-3" style="text-align:center">
+              <button id="zbutton_register" style="width:80%" class="btn btn-primary" onclick="ZButtonModal.register()">Register</button>
+            </div>
+          </div>
+        </div>
+        <div id="zbutton_createvm_box">
+          <h2>Create New Virtual Machine</h2>
+          <div class="row">
+            <div class="col-sm-9">
+              <p id="zbutton_createvm_text"></p>
+            </div>
+            <div class="col-sm-3" style="text-align:center">
+              <button id="zbutton_createvm" style="width:80%" class="btn btn-primary" onclick="ZButtonModal.createvm()">Create</button>
+            </div>
+          </div>
+        </div>
+        <div id="zbutton_virtualize_box">
+          <h2>Virtualize device</h2>
+          <div class="row">
+            <div class="col-sm-9">
+              <p id="zbutton_virtualize_text"></p>
+            </div>
+            <div class="col-sm-3" style="text-align:center">
+              <button id="zbutton_virtualize" style="width:80%" class="btn btn-primary" onclick="ZButtonModal.virtualize()">Virtualize</button>
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-danger" style="display:none">
+          <span class="pficon pficon-error-circle-o"></span><p id="zbutton_error"></p>
+        </div>
+      </div>
+      <div class="modal-footer" style="text-align:left">
+        <button type="button" class="btn btn-default" data-dismiss="modal" onclick="ZButtonModal.register()" id="zreg_button">Register Again</button>
+      </div>
+    </div>
+  </div>
+</div>

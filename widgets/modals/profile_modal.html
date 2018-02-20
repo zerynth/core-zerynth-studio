@@ -1,0 +1,826 @@
+<script src="zjs/tld.js"></script>
+<script>
+/**
+ *
+ * ProfileModal Variable permits to create and handle the profile view
+ * of the Zerynth Studio filling every related section with profile 
+ * informations (like personal info, account info, vm status, purchase
+ * history, etc.) received from Zerynth Backend
+ * 
+ * In this view is also possible to set personal informations and store
+ * them on the server 
+ *
+ **/
+var ProfileModal = {
+  /**
+   * fill profile modal sections with user profile informations.
+   * @param {Object} data - user profile informations.
+   * @returns None
+   **/
+  __fill: function(data){
+    // remap every device target in free asset with its related device name
+    // to improve data visualization
+    data.new_free_assets =_.map(ZDevices.targets,(v,k,l)=>{
+      var nn = {};
+      var asset = _.find(data.assets.free,(item)=>{return item.target == k})
+      if(asset){
+        nn.current = asset.current
+      }
+      else{
+        nn.current = 0;
+      }
+      nn.target = v.name
+      return nn
+    })
+    // group pro asset per rtos aggregating current and limit values;
+    // group targets per device per rtos aggregating current value and remapping 
+    // device target with its related device name
+    var rtos_group = _.groupBy(data.assets.vm, function(item){return item.rtos;})
+    data.new_rtos_assets = _.map(rtos_group,(v,k,l)=>{
+      var xx = {};
+      xx.rtos = k;
+      xx.limit = _.reduce(v, function(memo, num){ return memo + num.limit; }, 0);
+      xx.current = _.reduce(v, function(memo, num){ return memo + num.current; }, 0);
+      xx.remaining = xx.limit - xx.current;
+      var target_group = _.groupBy(_.flatten(_.map(v, (v2,k2,l2)=>{
+          return v2.targets
+        })),function(item2){return item2.target});
+      xx.targets = _.map(target_group,(v2,k2,l2)=>{
+          var yy = {}
+          var dev = _.find(ZDevices.targets,(item)=>{
+            return item.target==k2
+          })
+          yy.target = dev.name;
+          yy.current = _.reduce(v2, function(memo, num){return memo + num.current;},0);
+          yy.limit = xx.current;
+          return yy;
+        })
+      return xx;
+    })
+    // sort free asset per current value (from high to low)
+    data.new_free_assets = _.sortBy(data.new_free_assets, 'current').reverse()
+    // sort pro asset per rtos per current value (from high to low)
+    if (data.new_rtos_assets.length>0){
+      data.new_rtos_assets = _.sortBy(data.new_rtos_assets, 'rtos')
+      _.each(data.new_rtos_assets, function(item){
+        item.targets = _.sortBy(item.targets, 'current').reverse()
+        return item
+      })
+    }
+    // sort history list per most recent date
+    if (data.history.length>0){
+      data.history = _.map(data.history, function(v,k,l){
+        v.price = v.price.toFixed(2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+        return v
+      })
+      data.history = _.sortBy(data.history, 'date').reverse()
+    }
+    data.pro_asset = (_.find(data.badges,(item)=>{return item.name == "pro_asset_received"})) ? true:false;
+    data.profile100 = (_.find(data.badges,(item)=>{return item.name == "completed_profile"})) ? true:false;
+    // if (data.badges.length>0){
+    //   data.badges = _.map(data.badges,(v,k,l)=>{
+    //     var bb = {};
+    //     bb = v
+    //     bb.title = ZConf.badges[v.name]
+    //     return bb
+    //   })  
+    // }
+    console.log(data)
+
+    // renderind of the profile template in the profile div
+    $("#profile_div").html($.templates("#profile_template").render(data))
+    // open external browser for a[target=_blank]
+    $('a[target=_blank]').on('click', function(){
+      return ProfileModal.open_browser(this.href);
+    });
+    // handle of vmpro_history_selector showing/hiding related sections
+    $('#vmpro_history_selector input:radio[name="options"]').change(function(){
+      if (this.value==0){
+        $(".freertos_section").show()
+        $(".chibi_section").hide()
+        $(".history_section").hide()
+      } else if (this.value==1){
+        $(".freertos_section").hide()
+        $(".chibi_section").show()
+        $(".history_section").hide()
+      } else {
+        $(".freertos_section").hide()
+        $(".chibi_section").hide()
+        $(".history_section").show()
+      }
+    })
+    // regular expression to validate name and surname field
+    var regex_name = /([^0-9!\\\"£$%&\[\]\{\}()\/?*+#\-.:,;<>@^_|~]+)/g;
+    // regular expression to validate website field
+    var regex_url = /^(([^:/?#]+):\/\/)?(([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/;
+    // handle profile name form field checking its content
+    $('#profile_name').blur(function(){
+      var value_trimmered = this.value.trim();
+      var value_checked = value_trimmered.match(regex_name)
+      if (!this.value){
+        $('#pname').removeClass('has-error');
+        $('#pname').removeClass('has-success');
+        $('#gname').removeClass('glyphicon-remove');
+        $('#gname').removeClass('glyphicon-ok');
+        this.title = ''
+        $(this).attr("data-content","")
+        $(this).popover('hide')
+      }
+      else if (!value_checked || value_checked[0] != value_trimmered){        
+        $('#pname').removeClass('has-success');   
+        $('#pname').addClass('has-error');
+        $('#gname').removeClass('glyphicon-ok');
+        $('#gname').addClass('glyphicon-remove');
+        this.title = "Error"
+        $(this).attr("data-content","Name field cannot contain numbers or special characters<br>(\"£$%&/\\[]{}()?!*+#-.:,;-_<>@^|~)")
+        $(this).popover('show')
+      }
+      else{
+        $('#pname').removeClass('has-error');
+        $('#pname').addClass('has-success');
+        $('#gname').removeClass('glyphicon-remove');
+        $('#gname').addClass('glyphicon-ok');
+        this.title = ''
+        $(this).attr("data-content","")
+        $(this).popover('hide')
+      }
+    })
+    // handle profile surname form field checking its content
+    $('#profile_surname').blur(function(){
+      var value_trimmered = this.value.trim();
+      var value_checked = value_trimmered.match(regex_name)
+      if (!this.value){
+        $('#psurname').removeClass('has-error');
+        $('#psurname').removeClass('has-success');
+        $('#gsurname').removeClass('glyphicon-remove');
+        $('#gsurname').removeClass('glyphicon-ok');
+        this.title = ''
+        $(this).attr("data-content","")
+        $(this).popover('hide')
+      }
+      else if (!value_checked || value_checked[0] != value_trimmered){
+        $('#psurname').removeClass('has-success');        
+        $('#psurname').addClass('has-error');
+        $('#gsurname').removeClass('glyphicon-ok');
+        $('#gsurname').addClass('glyphicon-remove');
+        this.title = "Error"
+        $(this).attr("data-content","Surname field cannot contain numbers or special characters<br>(\"£$%&/\\[]{}()?!*+#-.:,;-_<>@^|~)")
+        $(this).popover('show')
+      }
+      else{
+        $('#psurname').removeClass('has-error');
+        $('#psurname').addClass('has-success');
+        $('#gsurname').removeClass('glyphicon-remove');
+        $('#gsurname').addClass('glyphicon-ok');
+        this.title = ''
+        $(this).attr("data-content","")
+        $(this).popover('hide')
+      }
+    })
+    // handle profile company form field checking its content
+    $('#profile_company').blur(function(){
+      var value_trimmered = this.value.trim();
+      if (value_trimmered){
+        $('#pcompany').addClass('has-success');
+        $('#gcompany').addClass('glyphicon-ok');
+      }
+      else{
+        $('#pcompany').removeClass('has-success');
+        $('#gcompany').removeClass('glyphicon-ok');
+      }
+    })
+    // handle profile job form field checking its content
+    $('#profile_job').change(function(){
+      if (this.value){
+        $('#pjob').addClass('has-success');
+        $('#gjob').addClass('glyphicon-ok');
+      }
+      else{
+        $('#pjob').removeClass('has-success');
+        $('#gjob').removeClass('glyphicon-ok');
+      }
+    })
+    // handle profile country form field checking its content
+    $('#profile_country').change(function(){
+      if (this.value){
+        $('#pcountry').addClass('has-success');
+        $('#gcountry').addClass('glyphicon-ok');
+      }
+      else{
+        $('#pcountry').removeClass('has-success');
+        $('#gcountry').removeClass('glyphicon-ok');
+      }
+    })
+    // handle profile age form field checking its content
+    $('#profile_age').change(function(){
+      if (this.value){
+        $('#page').addClass('has-success');
+        $('#gage').addClass('glyphicon-ok');
+      }
+      else{
+        $('#page').removeClass('has-success');
+        $('#gage').removeClass('glyphicon-ok');
+      }
+    })
+    // handle profile website form field checking its content
+    $('#profile_website').blur(function(){
+      if (!this.value){
+        $('#pwebsite').removeClass('has-error');
+        $('#pwebsite').removeClass('has-success');
+        $('#gwebsite').removeClass('glyphicon-remove');
+        $('#gwebsite').removeClass('glyphicon-ok');
+        this.title = ''
+        $(this).attr("data-content","")
+        $(this).popover('hide')
+      }
+      else{
+        var value_trimmered = this.value.trim();
+        var value_checked = value_trimmered.match(regex_url)
+        console.log(value_checked)
+        console.log(value_checked[4])
+        var domain = ""
+        // validation of top-level domain
+        if (value_checked[4]){
+          var value_splitted = value_checked[4].split('.')
+          if (value_splitted.length>1 && !_.contains(value_splitted, "")){
+            var domain = value_splitted[value_splitted.length-1].split(':')[0]
+          }
+          console.log(domain)
+        }
+        if (domain && _.contains(toplevel_domain_allowed, domain.toUpperCase())){        
+          $('#pwebsite').removeClass('has-error');
+          $('#pwebsite').addClass('has-success');
+          $('#gwebsite').removeClass('glyphicon-remove');
+          $('#gwebsite').addClass('glyphicon-ok');
+          this.title = ''
+          $(this).attr("data-content","")
+          $(this).popover('hide')
+        }
+        else{
+          $('#pwebsite').removeClass('has-success');   
+          $('#pwebsite').addClass('has-error');
+          $('#gwebsite').removeClass('glyphicon-ok');
+          $('#gwebsite').addClass('glyphicon-remove');
+          this.title = "Error"
+          $(this).attr("data-content","Insert a valid URL")
+          $(this).popover('show')  
+        }
+      }
+    })
+    // fill profile form fields
+    if(data.name){
+      $("#profile_name").val(data.name);
+      $('#pname').addClass('has-success');
+      $('#gname').addClass('glyphicon-ok');
+    }
+    if(data.surname){
+      $("#profile_surname").val(data.surname);
+      $('#psurname').addClass('has-success');
+      $('#gsurname').addClass('glyphicon-ok');
+    }
+    if(data.company){
+      $("#profile_company").val(data.company);
+      $('#pcompany').addClass('has-success');
+      $('#gcompany').addClass('glyphicon-ok');
+    }
+    if(data.job){
+      $("#profile_job").val(data.job);
+      $('#pjob').addClass('has-success');
+      $('#gjob').addClass('glyphicon-ok');
+    }
+    if(data.country){
+      $("#profile_country").val(data.country);
+      $('#pcountry').addClass('has-success');
+      $('#gcountry').addClass('glyphicon-ok');
+    }
+    if(data.age){
+      $("#profile_age").val(data.age);
+      $('#page').addClass('has-success');
+      $('#gage').addClass('glyphicon-ok');
+    }
+    if(data.website){
+      $("#profile_website").val(data.website);
+      $('#pwebsite').addClass('has-success');
+      $('#gwebsite').addClass('glyphicon-ok');
+    }
+    // calcutale profile completeness percentage
+    var a = b = c = d = e = f = g = nn = 0;
+    if (data.name) a = 1
+    if (data.surname) b = 1
+    if (data.company) c = 1
+    if (data.job) {
+      d = 1;
+      if (data.job == "student" || data.job == "other" || data.job == "maker") nn = 1
+    }
+    if (data.age) e = 1
+    if (data.website) f = 1
+    if (data.country) g = 1
+    if (nn==1) var percentage = parseInt(((100*(a+b+d+e+f+g))/6),10)
+    else var percentage = parseInt(((100*(a+b+c+d+e+f+g))/7),10)
+    // fill profile completeness bar and value
+    $("#profile_complete").width(String(percentage)+'%')
+    if (percentage != 100 && !data.profile100 && !data.pro_asset) $("#completeness").html("Complete your profile to get a <b><u><font color=\"#468c8c\" onmouseenter=\"$(this).popover('show')\" onmouseleave=\"$(this).popover('hide')\" data-toggle=\"popover\" data-trigger=\"manual\" data-html=\"true\" data-placement=\"bottom\" title=\"How to get your bonus\" data-content=\"Complete all profile fields to get: <ul><li>1 more Free Zerynth VM per supported device</li><li>50% discount on the Yearly Subscription of Zerynth Studio PRO for the first year</li></ul>\">Bonus</font></u></b> - "+String(percentage)+"% Complete")
+    else if (percentage != 100 && !data.profile100 && data.pro_asset) $("#completeness").html("Complete your profile to get a <b><u><font color=\"#468c8c\" onmouseenter=\"$(this).popover('show')\" onmouseleave=\"$(this).popover('hide')\" data-toggle=\"popover\" data-trigger=\"manual\" data-html=\"true\" data-placement=\"bottom\" title=\"How to get your bonus\" data-content=\"Complete all profile fields to get: <ul><li>1 more Free Zerynth VM per supported device</li></ul>\">Bonus</font></u></b> - "+String(percentage)+"% Complete")
+    else if (percentage == 100) $("#completeness").html("<font color=\"#468c8c\">"+String(percentage)+"% Complete</font>")
+    else $("#completeness").html(String(percentage)+"% Complete")
+  },
+  __show: function(){
+    $("#profile_modal").modal()
+  },
+  __hide: function(){
+    $("#profile_modal").modal("hide")
+  },
+  open_browser: function(ref){
+    console.log(ref)
+    require('nw.gui').Shell.openExternal( ref );
+    return false;
+  },
+  /**
+   * grub data from profile form and send them to the server.
+   * @param None
+   * @returns None
+   **/
+  save_profile: function(){
+    var age = $("#profile_age").val()
+    var country = $("#profile_country").val()
+    var job = $("#profile_job").val()
+    var company = $("#profile_company").val()
+    var name = $("#profile_name").val()
+    var surname = $("#profile_surname").val()
+    var website = $("#profile_website").val()
+    // check if there are errors in form fields
+    if($("#pname").hasClass("has-error") || $("#psurname").hasClass("has-error") || $("#pwebsite").hasClass("has-error")){
+      $("#profile_button").effect('highlight', {
+              color: '#cc0000'
+          }, 500);
+    }
+    else{
+      // ztc call for setting profile info
+      ZTC.set_profile({age:age,country:country,job:job,company:company,name:name,surname:surname,website:website})
+        .then(()=>{
+          // save button blinking yellow
+          $("#profile_button").effect('highlight', {
+              color: '#f4bf75'
+          }, 500);
+          // ztc call for getting profile to update form fields and profile completeness bar
+          ZTC.get_profile()
+              .then((profile)=>{
+                  ProfileModal.__fill(profile)
+              })
+              .catch((err)=>{
+                  Z.log("Error while loading profile! "+err)
+              })
+        })
+        .catch((err)=>{
+          // save button blinking red on error
+          $("#profile_button").effect('highlight', {
+              color: '#cc0000'
+          }, 500);
+        })
+    }
+  }
+}
+</script>
+
+<script id="profile_template" type="text/x-jsrender">
+<!--
+ *
+ * Profile Template: x-jsrender script to generate the right elements for the
+ * data visualization depending on profile informations passed as argument 
+ *
+ -->
+<div style="height: 330px;width:100%">
+  <!-- Account Info Section -->
+  <div class="col-sm-6" style="height: 330px;font-size:12px;">
+    <div class="text-center"><span class="fa fa-user" style="font-size:80px;color:#468c8c"></span></div>
+    <div style="font-size:25px;font-weight: bold;text-align: center" >{{:display_name}}</div>
+    <div style="font-style:italic;text-align:center">{{:email}}</div>
+    {{if subscription!="free"}}
+      <div style="text-align: center">Pro user - {{:subscription[0].toUpperCase()+subscription.substr(1)}}ly Plan{{if trial_period}} - Trial Period{{/if}}<br>(<a id="sub_manage" href="#" onmouseenter="$(this).popover()" data-toggle="popover" data-trigger="focus" data-html="true" data-placement="bottom" title="Manage your subscription" data-content="<button style='width:100%' type='button' onclick='javascript:ProfileModal.open_browser(&quot;https://store.zerynth.com/order-zerynth-studio-pro-{{if subscription == 'year'}}monthly{{else}}yearly{{/if}}-subscription/&quot;)' class='btn btn-primary'>Switch to {{if subscription == 'year'}}Monthly{{else}}Yearly{{/if}} Plan</button><br>Change your subscription and switch to {{if subscription == 'year'}}Monthly{{else}}Yearly{{/if}} Plan</a><br><br><button style='width:100%' type='button' onclick='javascript:ProfileModal.open_browser(&quot;https://store.zerynth.com/remove-subscription/&quot;)' class='btn btn-primary'>Remove Subscription</button><br>Cancel your pro user subscription and switch to free user">Manage your subscription</a>)</div>
+      <div style="text-align: center">Pro subscription {{if !sub_id}}expiring{{else trial_period}}starting{{else}}renewal{{/if}} {{:pro.slice(0,-9)}}</div>
+    {{else}}
+      <div style="text-align: center">Basic user<br>(<a href="https://store.zerynth.com" target="_blank">click here to go pro!</a>)</div>
+    {{/if}}
+    <div style="text-align: center">Active repositories: {{:repositories.join(", ")}}</div>
+    <hr>
+    <div style="text-align: left"><i>Profile Completeness</i></div>
+      <div class="progress progress">
+      <div class="progress-bar progress-bar-zerynth" id="profile_complete" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
+      </div>
+    </div>
+    <div style="text-align: right" id="completeness"><i>0% Complete</i></div>
+  </div>
+  <!-- Personal Info Section -->
+  <div class="col-sm-6" style="height: 330px;">
+    <div style="font-size:15px;text-align: center">Personal profile</div><br>
+      <form class="form-horizontal">
+        <div class="col-sm-6">
+          <div class="form-group" id="pname" style="padding-left:4px;padding-right: 4px">
+            <label class="control-label" for="profile_name">Name</label>
+            <input type="text" id="profile_name" data-toggle="popover" data-trigger="manual"data-html="true" data-placement="bottom" title="" data-content="" class="form-control">
+            <span class="glyphicon form-control-feedback" id="gname" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="form-group" id="psurname" style="padding-left:4px;padding-right: 4px">
+            <label class="control-label" for="profile_surname">Surname</label>
+            <input type="text" id="profile_surname" data-toggle="popover" data-html="true" data-placement="bottom" data-trigger="manual" title="" data-content="" class="form-control">
+            <span class="glyphicon form-control-feedback" id="gsurname" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="form-group" id="page" style="padding-left:4px;padding-right: 4px">
+            <label class="control-label" for="profile_age">Age</label>
+            <select id="profile_age" class="form-control">
+              <option value="">Not selected</option>
+              <option value="15-25">15-25</option>
+              <option value="26-35">26-35</option>
+              <option value="36-45">36-45</option>
+              <option value="46+">46+</option>
+            <select>
+            <span class="glyphicon form-control-feedback" id="gage" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="form-group" id="pcountry" style="padding-left:4px;padding-right: 4px">
+            <label class="control-label" for="profile_country">Country</label>
+            <select id="profile_country" class="form-control">
+              <option value="">Not selected</option>
+              <option value="Afghanistan">Afghanistan</option>
+              <option value="Albania">Albania</option>
+              <option value="Algeria">Algeria</option>
+              <option value="Andorra">Andorra</option>
+              <option value="Angola">Angola</option>
+              <option value="Antigua & Deps">Antigua & Deps</option>
+              <option value="Argentina">Argentina</option>
+              <option value="Armenia">Armenia</option>
+              <option value="Australia">Australia</option>
+              <option value="Austria">Austria</option>
+              <option value="Azerbaijan">Azerbaijan</option>
+              <option value="Bahamas">Bahamas</option>
+              <option value="Bahrain">Bahrain</option>
+              <option value="Bangladesh">Bangladesh</option>
+              <option value="Barbados">Barbados</option>
+              <option value="Belarus">Belarus</option>
+              <option value="Belgium">Belgium</option>
+              <option value="Belize">Belize</option>
+              <option value="Benin">Benin</option>
+              <option value="Bhutan">Bhutan</option>
+              <option value="Bolivia">Bolivia</option>
+              <option value="Bosnia Herzegovina">Bosnia Herzegovina</option>
+              <option value="Botswana">Botswana</option>
+              <option value="Brazil">Brazil</option>
+              <option value="Brunei">Brunei</option>
+              <option value="Bulgaria">Bulgaria</option>
+              <option value="Burkina">Burkina</option>
+              <option value="Burundi">Burundi</option>
+              <option value="Cambodia">Cambodia</option>
+              <option value="Cameroon">Cameroon</option>
+              <option value="Canada">Canada</option>
+              <option value="Cape Verde">Cape Verde</option>
+              <option value="Central African Rep">Central African Rep</option>
+              <option value="Chad">Chad</option>
+              <option value="Chile">Chile</option>
+              <option value="China">China</option>
+              <option value="Colombia">Colombia</option>
+              <option value="Comoros">Comoros</option>
+              <option value="Congo">Congo</option>
+              <option value="Congo {Democratic Rep}">Congo {Democratic Rep}</option>
+              <option value="Costa Rica">Costa Rica</option>
+              <option value="Croatia">Croatia</option>
+              <option value="Cuba">Cuba</option>
+              <option value="Cyprus">Cyprus</option>
+              <option value="Czech Republic">Czech Republic</option>
+              <option value="Denmark">Denmark</option>
+              <option value="Djibouti">Djibouti</option>
+              <option value="Dominica">Dominica</option>
+              <option value="Dominican Republic">Dominican Republic</option>
+              <option value="East Timor">East Timor</option>
+              <option value="Ecuador">Ecuador</option>
+              <option value="Egypt">Egypt</option>
+              <option value="El Salvador">El Salvador</option>
+              <option value="Equatorial Guinea">Equatorial Guinea</option>
+              <option value="Eritrea">Eritrea</option>
+              <option value="Estonia">Estonia</option>
+              <option value="Ethiopia">Ethiopia</option>
+              <option value="Fiji">Fiji</option>
+              <option value="Finland">Finland</option>
+              <option value="France">France</option>
+              <option value="Gabon">Gabon</option>
+              <option value="Gambia">Gambia</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Germany">Germany</option>
+              <option value="Ghana">Ghana</option>
+              <option value="Greece">Greece</option>
+              <option value="Grenada">Grenada</option>
+              <option value="Guatemala">Guatemala</option>
+              <option value="Guinea">Guinea</option>
+              <option value="Guinea-Bissau">Guinea-Bissau</option>
+              <option value="Guyana">Guyana</option>
+              <option value="Haiti">Haiti</option>
+              <option value="Honduras">Honduras</option>
+              <option value="Hungary">Hungary</option>
+              <option value="Iceland">Iceland</option>
+              <option value="India">India</option>
+              <option value="Indonesia">Indonesia</option>
+              <option value="Iran">Iran</option>
+              <option value="Iraq">Iraq</option>
+              <option value="Ireland {Republic}">Ireland {Republic}</option>
+              <option value="Israel">Israel</option>
+              <option value="Italy">Italy</option>
+              <option value="Ivory Coast">Ivory Coast</option>
+              <option value="Jamaica">Jamaica</option>
+              <option value="Japan">Japan</option>
+              <option value="Jordan">Jordan</option>
+              <option value="Kazakhstan">Kazakhstan</option>
+              <option value="Kenya">Kenya</option>
+              <option value="Kiribati">Kiribati</option>
+              <option value="Korea North">Korea North</option>
+              <option value="Korea South">Korea South</option>
+              <option value="Kosovo">Kosovo</option>
+              <option value="Kuwait">Kuwait</option>
+              <option value="Kyrgyzstan">Kyrgyzstan</option>
+              <option value="Laos">Laos</option>
+              <option value="Latvia">Latvia</option>
+              <option value="Lebanon">Lebanon</option>
+              <option value="Lesotho">Lesotho</option>
+              <option value="Liberia">Liberia</option>
+              <option value="Libya">Libya</option>
+              <option value="Liechtenstein">Liechtenstein</option>
+              <option value="Lithuania">Lithuania</option>
+              <option value="Luxembourg">Luxembourg</option>
+              <option value="Macedonia">Macedonia</option>
+              <option value="Madagascar">Madagascar</option>
+              <option value="Malawi">Malawi</option>
+              <option value="Malaysia">Malaysia</option>
+              <option value="Maldives">Maldives</option>
+              <option value="Mali">Mali</option>
+              <option value="Malta">Malta</option>
+              <option value="Marshall Islands">Marshall Islands</option>
+              <option value="Mauritania">Mauritania</option>
+              <option value="Mauritius">Mauritius</option>
+              <option value="Mexico">Mexico</option>
+              <option value="Micronesia">Micronesia</option>
+              <option value="Moldova">Moldova</option>
+              <option value="Monaco">Monaco</option>
+              <option value="Mongolia">Mongolia</option>
+              <option value="Montenegro">Montenegro</option>
+              <option value="Morocco">Morocco</option>
+              <option value="Mozambique">Mozambique</option>
+              <option value="Myanmar, {Burma}">Myanmar, {Burma}</option>
+              <option value="Namibia">Namibia</option>
+              <option value="Nauru">Nauru</option>
+              <option value="Nepal">Nepal</option>
+              <option value="Netherlands">Netherlands</option>
+              <option value="New Zealand">New Zealand</option>
+              <option value="Nicaragua">Nicaragua</option>
+              <option value="Niger">Niger</option>
+              <option value="Nigeria">Nigeria</option>
+              <option value="Norway">Norway</option>
+              <option value="Oman">Oman</option>
+              <option value="Pakistan">Pakistan</option>
+              <option value="Palau">Palau</option>
+              <option value="Panama">Panama</option>
+              <option value="Papua New Guinea">Papua New Guinea</option>
+              <option value="Paraguay">Paraguay</option>
+              <option value="Peru">Peru</option>
+              <option value="Philippines">Philippines</option>
+              <option value="Poland">Poland</option>
+              <option value="Portugal">Portugal</option>
+              <option value="Qatar">Qatar</option>
+              <option value="Romania">Romania</option>
+              <option value="Russian Federation">Russian Federation</option>
+              <option value="Rwanda">Rwanda</option>
+              <option value="St Kitts & Nevis">St Kitts & Nevis</option>
+              <option value="St Lucia">St Lucia</option>
+              <option value="Saint Vincent & the Grenadines">Saint Vincent & the Grenadines</option>
+              <option value="Samoa">Samoa</option>
+              <option value="San Marino">San Marino</option>
+              <option value="Sao Tome & Principe">Sao Tome & Principe</option>
+              <option value="Saudi Arabia">Saudi Arabia</option>
+              <option value="Senegal">Senegal</option>
+              <option value="Serbia">Serbia</option>
+              <option value="Seychelles">Seychelles</option>
+              <option value="Sierra Leone">Sierra Leone</option>
+              <option value="Singapore">Singapore</option>
+              <option value="Slovakia">Slovakia</option>
+              <option value="Slovenia">Slovenia</option>
+              <option value="Solomon Islands">Solomon Islands</option>
+              <option value="Somalia">Somalia</option>
+              <option value="South Africa">South Africa</option>
+              <option value="South Sudan">South Sudan</option>
+              <option value="Spain">Spain</option>
+              <option value="Sri Lanka">Sri Lanka</option>
+              <option value="Sudan">Sudan</option>
+              <option value="Suriname">Suriname</option>
+              <option value="Swaziland">Swaziland</option>
+              <option value="Sweden">Sweden</option>
+              <option value="Switzerland">Switzerland</option>
+              <option value="Syria">Syria</option>
+              <option value="Taiwan">Taiwan</option>
+              <option value="Tajikistan">Tajikistan</option>
+              <option value="Tanzania">Tanzania</option>
+              <option value="Thailand">Thailand</option>
+              <option value="Togo">Togo</option>
+              <option value="Tonga">Tonga</option>
+              <option value="Trinidad & Tobago">Trinidad & Tobago</option>
+              <option value="Tunisia">Tunisia</option>
+              <option value="Turkey">Turkey</option>
+              <option value="Turkmenistan">Turkmenistan</option>
+              <option value="Tuvalu">Tuvalu</option>
+              <option value="Uganda">Uganda</option>
+              <option value="Ukraine">Ukraine</option>
+              <option value="United Arab Emirates">United Arab Emirates</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="United States">United States</option>
+              <option value="Uruguay">Uruguay</option>
+              <option value="Uzbekistan">Uzbekistan</option>
+              <option value="Vanuatu">Vanuatu</option>
+              <option value="Vatican City">Vatican City</option>
+              <option value="Venezuela">Venezuela</option>
+              <option value="Vietnam">Vietnam</option>
+              <option value="Yemen">Yemen</option>
+              <option value="Zambia">Zambia</option>
+              <option value="Zimbabwe">Zimbabwe</option>
+            </select>
+            <span class="glyphicon form-control-feedback" id="gcountry" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="col-sm-3" style="height:50px;">
+        </div>
+        <div class="col-sm-6">
+          <div class="form-group" id="pjob" style="height:50px;padding-left:4px;padding-right:4px;">
+            <label class="control-label has-feedback" for="profile_job">You are a:</label>
+            <select id="profile_job" class="form-control">
+            <option value="">Not selected</option>
+            <option value="maker">Maker</option>
+            <option value="product_designer">Professional - Product Designer</option>
+            <option value="embedded_developer">Professional - Embedded Developer</option>
+            <option value="iot_architect">Professional - IOT System Architect</option>
+            <option value="computer_scientist">Professional - Computer Scientist</option>
+            <option value="researcher_teacher">Researcher/Teacher</option>
+            <option value="student">Student</option>
+            <option value="other">Other</option>
+            </select>
+            <span class="glyphicon form-control-feedback" id="gjob" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="col-sm-3" style="height:50px;">
+        </div>
+        <div class="col-sm-6">
+          <div class="form-group" id="pcompany" style="padding-left:4px;padding-right: 4px">
+            <label class="control-label" for="profile_company">Company/Organization</label>
+            <input type="text" id="profile_company" class="form-control">
+            <span class="glyphicon form-control-feedback" id="gcompany" aria-hidden="true"></span>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div class="form-group" id="pwebsite" style="padding-left:4px;padding-right: 4px">
+            <label class="control-label" for="profile_website">Website</label>
+            <input type="text" id="profile_website" data-toggle="popover" data-trigger="manual" data-html="true" data-placement="bottom" title="" data-content="" class="form-control">
+            <span class="glyphicon form-control-feedback" id="gwebsite" aria-hidden="true"></span>
+          </div> 
+        </div>
+      </form>
+    <div class="col-sm-12" style="text-align: center">
+      <button id="profile_button" class="btn btn-default" onclick="ProfileModal.save_profile()">Save</button>
+    </div>
+  </div>
+</div>
+<hr>
+<div style="font-size:15px;text-align: center">Your Free Zerynth VMs</div><br>
+<!-- Virtual Machine Detail Section -->
+<div class="text-center" style="height: 100px;overflow-y: auto;">
+  <!-- Free Virtual Machine Detail Section -->
+  <div class="free_section">
+    <center>
+    <!-- Free Virtual Machine table generator -->
+    {{if new_free_assets.length>0}}
+      <table class="table table-striped table-bordered" style="max-width: 75%;padding:4px">
+      <tr style="background-color:#468c8c;color:#ffffff"><th>Device</th><th>Consumed / Available</th></tr>
+      {{for new_free_assets ~limit=free_limit}}
+        <tr>
+        <td>
+          {{:target}}
+        </td>
+        <td style="color:{{if (current/~limit) < 0.6}}#468c8c{{else (current/~limit) < 1}}#f0ad4e{{else}}#d9534f{{/if}}">
+          {{:current}} / {{if ~limit<0}}∞{{else}}{{:~limit}}{{/if}}
+        </td>
+        </tr>
+      {{/for}}
+      </table>
+    <!-- Message for starting to virtualize the first device -->
+    {{else}}
+      <a href="https://docs.zerynth.com/latest/official/core.zerynth.docs/gettingstarted/docs/index.html#connect-register-and-virtualize-your-device" target="_blank">Learn how to virtualize your first device!</a>
+    {{/if}}
+    </center>
+  </div>
+</div>
+<hr>
+<!-- vmpro_history_selector -->
+<div style="font-size:15px;text-align: center">Your Production Zerynth VMs</div>
+<div class="text-center">
+  <div class="btn-group" data-toggle="buttons" id="vmpro_history_selector">
+    <label class="btn btn-primary active tooltip-br" title="VMs - FreeRTOS" id="out0">
+      <input type="radio" name="options" id="show0" autocomplete="off" value="0" checked>VMs - FreeRTOS
+    </label>
+    <label class="btn btn-primary tooltip-br" title="VMs - ChibiOS" id="out1">
+      <input type="radio" name="options" id="show1" autocomplete="off" value="1">VMs - ChibiOS
+    </label>
+    <label class="btn btn-warning tooltip-br" title="Purchase History" id="out2">
+      <input type="radio" name="options" id="show2" autocomplete="off" value="2">Purchase History
+    </label>
+  </div>
+</div>
+<br>
+<!-- Messages in Pro VM and History Purchase Section -->
+{{if subscription=='free'}}
+  <div style="text-align: center"><a href="https://store.zerynth.com/zerynth-studio-pro/" target="_blank">Go Pro to unlock Production Zerynth VMs</a></div>
+{{else}}
+  {{if new_rtos_assets.length==0}}
+    <div class="freertos_section" style="text-align: center"><a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
+    <div class="chibi_section" style="text-align: center" hidden><a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
+  {{else new_rtos_assets.length==1}}
+    <div class="{{if new_rtos_assets[0].rtos=='chibi'}}chibi{{else}}freertos{{/if}}_section" style="text-align: center" {{if new_rtos_assets[0].rtos=='chibi'}}hidden{{/if}}><font color="{{if new_rtos_assets[0].remaining > 30}}#468c8c{{else new_rtos_assets[0].remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:new_rtos_assets[0].remaining}}</font> Zerynth VMs - {{if new_rtos_assets[0].rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}} remaining. <a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
+    <div class="{{if new_rtos_assets[0].rtos=='chibi'}}freertos{{else}}chibi{{/if}}_section" style="text-align: center" {{if new_rtos_assets[0].rtos!='chibi'}}hidden{{/if}}><a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
+  {{else}}
+    {{for new_rtos_assets}}
+      <div class="{{if rtos=='chibi'}}chibi{{else}}freertos{{/if}}_section" style="text-align: center" {{if rtos=='chibi'}}hidden{{/if}}><font color="{{if remaining > 30}}#468c8c{{else remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:remaining}}</font> Zerynth VMs - {{if rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}} remaining. <a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
+    {{/for}}
+  {{/if}}
+  <div class="history_section" style="text-align: center" hidden><a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
+{{/if}}
+<!-- Pro VM and History Purchase Section -->
+<div class="text-center" style="height: 100px;overflow-y: auto;">
+  <!-- Pro Asset table generator -->
+  {{if new_rtos_assets.length>0}}
+    {{for new_rtos_assets ~sub=subscription}}
+      <center>
+        <div class="{{:rtos}}_section" {{if rtos=='chibi'}}hidden{{/if}}>
+          <table class="table table-striped table-bordered" style="max-width: 75%;padding:4px;{{if ~sub=='free'}}background-color: #f9f9f9;color:#c2c2c2{{/if}}">
+          <tr style="background-color:#468c8c;{{if ~sub!='free'}}color:#ffffff{{/if}}"><th>Consumed Zerynth VMs - {{if rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}}</th><th>{{:current}} / {{if limit<0}}∞{{else}}{{:limit}}{{/if}}</th></tr>
+          {{if targets.length>0}}
+            {{for targets ~ss=~sub}}
+              <tr>
+              <td>{{:target}}</td><td {{if ~ss!='free'}}style="color:#468c8c;"{{/if}}>{{:current}}</td>
+              </tr>
+            {{/for}}
+          {{/if}}
+          </table>
+        </div>
+      </center>
+    {{/for}}
+  {{/if}}
+  <!-- Purchase History table generator -->
+  {{if history.length>0}}
+    <div style="text-align: center;" class="history_section" hidden>
+      <center>
+        <table class="table table-striped table-bordered history-table" style="max-width: 75%;padding:4px">
+        <tr style="background-color:#468c8c;color:#ffffff"><th>Item</th><th>Date</th><th>Price</th><th>Receipt Number</th></tr>
+        {{for history}}
+          <tr>
+          <td>{{:item}}</td><td>{{:date.slice(0,-9)}}</td><td style="text-align: right">$ {{:price}}</td><td style="text-align: right">{{if order}}{{:order}}{{else}}---{{/if}}</td>
+          </tr>
+        {{/for}}
+        </table>
+      </center>
+    </div>
+  {{else}}
+    <div style="text-align: center;" class="history_section" hidden>No Purchase History Available</div>
+  {{/if}}
+</div>
+<hr>
+<!-- {{if badges.length>0}}
+<div style="font-size:15px;text-align: center">Earned Badges</div>
+<center>
+{{for badges}}
+<img style="height:35px" onmouseenter="$(this).popover('show')" onmouseleave="$(this).popover('hide')" data-toggle="popover" data-trigger="manual" data-html="true" data-placement="top" title="{{:title}}" data-content="{{:description}}" src="img/{{:name}}.png">
+{{/for}}
+</center>
+{{/if}} -->
+</script>
+
+<!-- 
+  * html content of the Zerynth Studio profile view
+ -->
+<div class="modal fade" id="profile_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog" style="min-width: 60%">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">Profile</h4>
+      </div>
+      <div class="modal-body">
+        <div id="profile_div"></div>
+        <div class="alert alert-danger" style="display:none">
+          <span class="pficon pficon-error-circle-o"></span><p id="profile_error"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,58 @@
+
+<div  class="zleftbar">
+    <button id="leftbar_project" class="btn btn-link" title="Current Project" onclick="javascript:LeftBar.select('project')"><i class="fa fa-code"></i></button>
+    <button id="leftbar_projects" class="btn btn-link" title="Projects" onclick="javascript:LeftBar.select('projects')"><i class="fa fa-folder-open-o"></i></button>
+    <button id="leftbar_examples" class="btn btn-link" title="Examples" onclick="javascript:LeftBar.select('examples')"><i class="fa fa-lightbulb-o"></i></button>
+    <button id="leftbar_zpm" class="btn btn-link" title="Libraries" onclick="javascript:LeftBar.select('zpm')"><i class="fa fa-puzzle-piece"></i></button>
+    <button id="leftbar_news" class="btn btn-link" title="News Feed" onclick="javascript:LeftBar.select('news')"><i class="fa fa-rss"></i></button> 
+    <button id="leftbar_consoles" class="btn btn-link" title="Consoles list" onclick="javascript:LeftBar.select('consoles')"><i class="zerynth zerynth-terminal2"></i></button>
+    <button id="leftbar_things" class="btn btn-link" title="Connected Devices" onclick="javascript:LeftBar.select('things')"><i class="zerynth zerynth-Zerynth-ADM"></i></button> 
+</div>
+<script>
+
+var LeftBar = {
+    selected: null,
+    select: function(what){
+        console.log("selecting"+what)
+        if (LeftBar.selected) $("#leftbar_"+LeftBar.selected).removeClass("current");
+        LeftBar.selected=what
+        $("#leftbar_"+what).addClass("current")
+        $(".zleftbarview").hide()
+        LeftBar[what]()
+    },
+    project: function(){
+        $("#project_view").show()
+        Bus.dispatch("project_change")
+    },
+    projects: function(){
+        $("#projects_view").show()
+        Bus.dispatch("projects_change")
+    },
+    examples: function(){
+        $("#examples_view").show()
+        Bus.dispatch("ex_show")
+    },
+    zpm: function(){
+        $("#packages_view").show()
+        //Bus.dispatch("projects_change")
+    },
+    news: function(){
+        $("#feed_view").show()
+        FeedView.redraw()
+    },
+    init: function(){
+        Bus.addEventListener("project_new",()=>{LeftBar.select("project")})
+    },
+    consoles: function(){
+        $("#consoles_panel").show()
+        Bus.dispatch("consoles_change")
+    },
+    things: function(){
+        $("#things_view").show()
+        ThingsView.redraw()
+        //Bus.dispatch("consoles_change")
+    }
+}
+
+LeftBar.init()
+</script>

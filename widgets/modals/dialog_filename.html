@@ -1,0 +1,57 @@
+<script>
+
+var FilenameModal = {
+  promise: null,
+  __fill: function(data){
+    $("#filename_title").html(data.title || "")
+    FilenameModal.promise = data.resolve
+  },
+  __show: function(){
+    $("#filename_modal alert").hide()
+    $("#filename_modal").modal()
+    $("#filename_name").focus()
+  },
+  __hide: function(){
+    $("#filename_modal").modal("hide")
+  },
+  __err: function(msg){
+    $("#filename_error").html(msg)
+    $("#filename_modal .alert").show()
+  },
+  create: function(){
+    if (FilenameModal.promise){
+      FilenameModal.promise($("#filename_name").val())
+    }
+    return false
+  }
+}
+
+</script>
+<div class="modal fade" id="filename_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="filename_title">New File</h4>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" onsubmit="return FilenameModal.create()">
+          <div class="form-group">
+            <label class="col-sm-3 control-label" for="textInput-modal-markup">Name</label>
+            <div class="col-sm-9">
+              <input type="text" id="filename_name" class="form-control"></div>
+          </div>
+        </form>
+        <div class="alert alert-danger alert-error" style="display:none">
+          <span class="pficon pficon-error-circle-o" ></span><p id="filename_error"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="FilenameModal.create()">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>

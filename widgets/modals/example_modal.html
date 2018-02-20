@@ -1,0 +1,47 @@
+<script>
+
+var ExampleModal = {
+  
+  __fill: function(data){
+    $("#ex_modal_title").html(data.name)
+    $("#ex_modal_desc").html(data.desc)
+    $("#ex_modal_code").html(data.code)
+    $("#ex_modal_path").html(data.path)
+  },
+  __show: function(){
+    $("#example_modal").modal()
+  },
+  clone: ()=>{
+    $("#example_modal").modal("hide")
+    Dialogs.project_new({
+      title:$("#ex_modal_title").html(),
+      from:$("#ex_modal_path").html()
+    })
+  }
+}
+
+</script>
+<div class="modal fade" id="example_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="-webkit-user-select: text;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="ex_modal_title">View Example</h4>
+      </div>
+      <div class="modal-body">
+        <pre id="ex_modal_desc" style="white-space:pre-wrap;max-height:200px"></pre>
+        <pre id="ex_modal_code" style="white-space:pre-wrap;max-height:400px"></pre>
+        <div class="alert alert-danger" style="display:none">
+          <span class="pficon pficon-error-circle-o" id="project_new_error"></span>
+        </div>
+      </div>
+      <div id="ex_modal_path" style="display:none"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="ExampleModal.clone()">Clone</button>
+      </div>
+    </div>
+  </div>
+</div>

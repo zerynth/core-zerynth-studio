@@ -1,0 +1,86 @@
+<script>
+  var FeedView = {
+    moment: require("moment"),
+    init: function(){
+    },
+    redraw: function(){
+      var FeedParser = require('feedparser')
+      var request = require('request');
+      var req = request('http://community.zerynth.com/categories/releases/feed.rss')
+      var feedparser = new FeedParser();
+
+      ZNotify.wait("Retrieving feed...")
+      req.on('error', function (error) {
+        ZNotify.done()
+        Z.log("Error while trying to reach the feed!")
+      });
+      req.on('response', function (res) {
+        var stream = this;
+
+        if (res.statusCode != 200) {
+          ZNotify.done()
+          Z.log("Error while trying to reach the feed!")
+          return this.emit('error', new Error('Bad status code'));
+        }
+
+        stream.pipe(feedparser);
+      });
+
+
+      feedparser.on('error', function(error) {
+        ZNotify.done()
+        Z.log("Error while trying to read the feed!")
+      });
+      var items = []
+      feedparser.on('readable', function() {
+      
+        var stream = this
+          , meta = this.meta // **NOTE** the "meta" is always available in the context of the feedparser instance
+          , item;
+        while (item = stream.read()) {
+          item.description = item.description.replace("<br />","\n")
+          if (items.length<10) items.push(item)
+        }
+        
+      });
+      feedparser.on("end",()=>{
+        ZNotify.done()
+        console.log(items)
+        $("#current_feedview").html($.templates("#feedview_listitem").render(items,FeedView))
+        $(".feed_body").shorten({showChars: 200})
+        $('a[target=_blank]').on('click', function(){
+          require('nw.gui').Shell.openExternal( this.href );
+          return false;
+        });
+      })
+    }
+}
+
+</script>
+
+<!-- JS & Templates -->
+<script id="feedview_listitem" type="text/x-jsrender">
+  <div class="feed_item">
+  <div class="feed_header">{{: ~moment(date).fromNow()}} <a href="{{:link}}" target="_blank">link</a></div>
+  <div class="feed_body">
+    {{:description}}<br>
+  </div>
+  </div>
+</script>
+
+<!-- HTML -->
+<div class="zleftbarview" id="feed_view">
+  <div class="zleftheader">
+    <div class="zleftheadertitle">News Feed</div>
+  </div>
+  <div class="zleftcontainer">
+    <div class="zleftpanel">
+      <div class="container-fluid" style="padding:0px">
+        <div id="current_feedview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript">
+  FeedView.init()
+</script>

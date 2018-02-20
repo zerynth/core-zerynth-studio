@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" >
+    <head>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+        <title>Zerynth Studio</title>
+        <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon"/>
+        <link rel="icon" href="img/favicon.ico" type="image/x-icon"/>
+        <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="96x96" href="img/favicon-96x96.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png">
+        <link href="css/layout-default-latest.css" rel="stylesheet" type="text/css" />
+
+        <link href="bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+        
+         <!-- PatternFly Styles -->
+        <link href="bower_components/patternfly/dist/css/patternfly.min.css" rel="stylesheet" media="screen, print">
+        <link href="bower_components/patternfly/dist/css/patternfly-additions.min.css" rel="stylesheet" media="screen, print">
+
+        <!-- jQuery & Underscore -->
+        <script src="bower_components/jquery/dist/jquery.min.js"></script>
+        <script src="bower_components/jquery.hotkeys/jquery.hotkeys.js"></script>
+        <script src="bower_components/underscore/underscore-min.js"></script>
+        <!-- JsRender -->
+        <script src="bower_components/jsrender/jsrender.min.js"></script>
+        <!-- Bootstrap -->
+        <script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+
+        <!-- PatternFly -->
+        <script src="bower_components/patternfly/dist/js/patternfly.min.js"></script>
+        <script src="bower_components/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
+        <link rel="stylesheet" href="bower_components/bootstrap-switch/dist/css/bootstrap3/bootstrap-switch.min.css">
+        <script src="bower_components/bootstrap-switch/dist/js/bootstrap-switch.min.js"></script>
+        <script src="bower_components/patternfly-bootstrap-treeview/dist/bootstrap-treeview.min.js"></script>
+        <script src="bower_components/bootstrap-combobox/js/bootstrap-combobox.js"></script>
+        <script src="bower_components/bootstrap-tagsinput/src/bootstrap-tagsinput.js"></script>
+        <link rel="stylesheet" href="bower_components/bootstrap-tagsinput/src/bootstrap-tagsinput.css">
+        
+        <!-- Layout -->
+        <script type="text/javascript" src="js/libs/jquery-ui/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="js/libs/jquery.layout-latest.js"></script>
+        <link rel="stylesheet" href="js/libs/jquery-ui/jquery-ui.min.css" />
+        
+
+        <link rel="stylesheet" href="bower_components/jquery-shorten-js/dist/css/shorten.min.css">
+        <script src="bower_components/jquery-shorten-js/dist/jquery-shorten.min.js"></script>
+
+        <!-- Fuse -->
+        <script src="bower_components/fuse.js/src/fuse.min.js"></script>
+
+
+        <script src="bower_components/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
+        <script src="bower_components/bootbox.js/bootbox.js"></script>
+
+        
+        <!-- ZJS LIBS -->
+        <script type="text/javascript" src="zjs/z.js"></script>
+        <script type="text/javascript" src="zjs/zconf.js"></script>
+        <script type="text/javascript" src="zjs/login.js"></script>
+        <script type="text/javascript" src="zjs/zapi.js"></script>
+        <script type="text/javascript" src="zjs/project.js"></script>
+        <script type="text/javascript" src="zjs/ztc.js"></script>
+        <script type="text/javascript" src="zjs/zdevices.js"></script>
+        <script type="text/javascript" src="zjs/zindexer.js"></script>
+        <script type="text/javascript" src="zjs/widgets/dialogs.js"></script>
+        <script type="text/javascript" src="zjs/widgets/notify.js"></script>
+        
+
+        <!-- Z Styles -->
+        <link href="zcss/zerynth.css" rel="stylesheet"  type="text/css"/>
+        <link href="zcss/zerynth-light.css" rel="stylesheet"  type="text/css"/>
+        <link href="zcss/style.css" rel="stylesheet" type="text/css">
+        <link href="zcss/login.css" rel="stylesheet" type="text/css" />
+    </head>
+    <body class="theme-zerynth-light">
+        <div id="splashscreen" >
+            <p>Loading Zerynth Studio</p>
+            <div class="splash_spinner">
+                <div class="double-bounce1"></div>
+                <div class="double-bounce2"></div>
+            </div>
+        </div>
+        <div id="header">
+            <div class="zwidget" target="widgets/header.html"></div>
+        </div>
+        <div id="universal_search" >
+            <div id="universal_combo">
+                <div class="input-group input-group-lg">
+                  <span class="input-group-addon" id="sizing-addon1"><span class="fa fa-search"></span></span>
+                  <input id="universal_input" type="text" class="form-control" placeholder="type to search..." aria-describedby="sizing-addon1">
+                </div>
+                <div id="universal_select">
+                </div>
+            </div>
+        </div>
+        <div id="layouter" class="mainlayout">
+        <div class="ui-layout-west" style="padding:0px">
+            <div class="zwidget" target="widgets/leftbar.html"></div>
+            <div class="zwidget" target="widgets/project_view.html"></div>
+            <div class="zwidget" target="widgets/projects_view.html"></div>
+            <div class="zwidget" target="widgets/examples_view.html"></div>
+            <div class="zwidget" target="widgets/package_view.html"></div>
+            <div class="zwidget" target="widgets/consoles_view.html"></div>
+            <div class="zwidget" target="widgets/feeds_view.html"></div>
+            <div class="zwidget" target="widgets/things_view.html"></div>
+        </div>
+        <!-- <div class="ui-layout-east">EAST</div> -->
+        <div class="ui-layout-center" id="centerDiv" style="padding:0px">
+            <div class="ui-layout-center" style="padding:0px;;overflow-y:hidden">
+                    <div class="zwidget" target="widgets/editor.html"></div>
+            </div>
+            <div class="ui-layout-south" style="padding:0px">
+                <div id="logger"></div>
+            </div>
+            </div>
+        </div>
+        <div id="footer">
+            <div class="zwidget" target="widgets/footer.html"></div>
+        </div>
+<!-- MODALS -->
+
+<div class="zwidget" target="widgets/modals/login_modal.html"></div>
+<div class="zwidget" target="widgets/modals/project_new.html"></div>
+<div class="zwidget" target="widgets/modals/project_clone.html"></div>
+<!-- <div class="zwidget" target="widgets/modals/project_publish.html"></div> -->
+<div class="zwidget" target="widgets/modals/library_publish.html"></div>
+<div class="zwidget" target="widgets/modals/device_disambiguate.html"></div>
+<div class="zwidget" target="widgets/modals/deviceadd_modal.html"></div>
+<div class="zwidget" target="widgets/modals/deviceinfo_modal.html"></div>
+<div class="zwidget" target="widgets/modals/devicepinmap_modal.html"></div>
+<div class="zwidget" target="widgets/modals/alert_modal.html"></div>
+<div class="zwidget" target="widgets/modals/virtualize_modal.html"></div>
+<div class="zwidget" target="widgets/modals/createvm_modal.html"></div>
+<div class="zwidget" target="widgets/modals/example_modal.html"></div>
+<div class="zwidget" target="widgets/modals/dialog_filename.html"></div>
+<div class="zwidget" target="widgets/modals/install_modal.html"></div>
+<div class="zwidget" target="widgets/modals/profile_modal.html"></div>
+<div class="zwidget" target="widgets/modals/about_modal.html"></div>
+<div class="zwidget" target="widgets/modals/update_modal.html"></div>
+<div class="zwidget" target="widgets/modals/templates_modal.html"></div>
+<div class="zwidget" target="widgets/modals/groups_modal.html"></div>
+<div class="zwidget" target="widgets/modals/zbutton_modal.html"></div>
+<div class="zwidget" target="widgets/modals/messages_modal.html"></div>
+<div class="zwidget" target="widgets/modals/patches_modal.html"></div>
+
+<!-- MISC -->
+<input id="open_dir_hidden_input" type="file" nwdirectory style="display:none"/>
+<input id="save_file_hidden_input"type="file" nwsaveas style="display:none"/>
+<input id="save_dir_hidden_input"type="file" nwsaveas nwdirectory style="display:none"/>
+
+<!-- ACE -->
+<script src="bower_components/ace-builds/src-min-noconflict/ace.js"></script>
+<script src="bower_components/ace-builds/src-min-noconflict/ext-language_tools.js"></script>
+
+
+<!--
+<script type="text/javascript" src="js/libs/qtip.min.js"></script>
+<script type="text/javascript" src="js/libs/kfiledrop.js"></script>
+<script type="text/javascript" src="js/libs/ws.js"></script>
+<script type="text/javascript" src="js/libs/utils.js"></script>
+<script type="text/javascript" src="js/libs/jquery.svgpan.js"></script>
+<script type="text/javascript" src="js/tour.js"></script>
+<script type="text/javascript" src="js/libs/bootstrap-rating-input.js"></script>
+-->
+
+<!--ide -->
+<script type="text/javascript" src="zjs/appstore.js"></script>
+<script type="text/javascript" src="zjs/app.js"></script>
+
+ 
+<!-- DEBUG RELOAD TODO: REMOVE!
+<script>
+  var fs = require('fs');
+  var rld = function() {
+    App.win.reloadIgnoringCache()
+  }
+
+  fs.watch("./",rld); 
+  fs.watch("./css",rld);
+  fs.watch("./zcss",rld);
+  fs.watch("./js",rld);
+  fs.watch("./zjs",rld);
+  fs.watch("./zjs/widgets",rld);
+  fs.watch("./widgets",rld);
+  fs.watch("./widgets/modals",rld);
+</script>
+-->
+<!--
+<script type="text/javascript" src="js/viperconf.js"></script>
+<script type="text/javascript" src="js/viperclient.js"></script>
+<script type="text/javascript" src="js/comm.js"></script>
+<script type="text/javascript" src="js/ide.js"></script>
+<script type="text/javascript" src="js/editor.js"></script>
+<script type="text/javascript" src="js/projects.js"></script>
+<script type="text/javascript" src="js/devices.js"></script>
+<script type="text/javascript" src="js/misc.js"></script>
+<script type="text/javascript" src="js/vpm.js"></script>
+<script type="text/javascript" src="js/libraries.js"></script>
+-->
+</body>
+</html>
+

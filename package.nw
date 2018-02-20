@@ -1,0 +1,12 @@
+{
+    "main": "index.html",
+    "name": "Zerynth Studio",
+    "window": {
+        "frame": true,
+        "icon": "img/Logo512.png",
+        "min_height": 600,
+        "min_width": 800
+    },
+    "version":"r2.0.3",
+    "user-agent":"ide/r2.0.5/linux64"
+}

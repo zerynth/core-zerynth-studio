@@ -1,0 +1,119 @@
+<script>
+
+var ProjectNewModal = {
+  working_dir: Z.homedir(),
+  title_to_wkdir: function(title){return title.replace(/\s/g,"_")},
+  set_wkdir: function(title){
+     $("#project_new_workingdir").val(
+        Z.path.join(
+          ProjectNewModal.working_dir,
+          ProjectNewModal.title_to_wkdir(title)
+          )
+        )
+  },
+  __fill: function(data){
+    var title = data.title || ""
+    var description = data.description || ""
+    var clone_from = data.from || ""
+    var pntitle = $("#project_new_title")
+    var pnwkdir = $("#project_new_workingdir")
+    var pndesc = $("#project_new_description")
+    pntitle.unbind("change").unbind("keyup")
+    pntitle.val(title);
+    pnwkdir.val(ProjectNewModal.working_dir);
+    pndesc.val(description);
+    pntitle.change(function(){
+      var title = $(this).val();
+      ProjectNewModal.set_wkdir(title)
+    });
+    pntitle.on("keyup",function(event){
+      var title = this.value
+      ProjectNewModal.set_wkdir(title)
+    });
+    $("#project_new_from").val(clone_from)
+    ProjectNewModal.set_wkdir(title)
+  },
+  __show: function(){
+    $("#project_new_modal").modal()
+  },
+  create: function(){
+    $("#project_new_alert").hide()
+    var title = $("#project_new_title").val()
+    var description = $("#project_new_description").val()
+    var clone_from = $("#project_new_from").val()
+    var prj = new Project($("#project_new_workingdir").val())
+    $("#project_new_modal alert").hide()
+    ZNotify.wait("Creating project...")
+    prj.create(title,description,clone_from).then(
+      (project)=>{
+        $("#project_new_modal").modal("toggle")
+        prj.open()
+          .then(()=>{
+            ZNotify.done()
+            Store.add_project(project,true)
+            LeftBar.project()
+          }).catch((err)=>{
+            ZNotify.done()
+          })
+    }).catch(
+      (err)=>{
+        ZNotify.modal_error("project_new", err)
+        ZNotify.done("Error")
+      })
+  },
+  choose_wkdir: function(){
+    Dialogs.open_dir()
+        .then((dir)=>{
+          ProjectNewModal.working_dir = dir
+          ProjectNewModal.set_wkdir($("#project_new_title").val())
+        })
+  }
+}
+
+</script>
+<div class="modal fade" id="project_new_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">New Project...</h4>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal">
+          <div class="form-group">
+            <label class="col-sm-3 control-label" for="textInput-modal-markup">Title</label>
+            <div class="col-sm-9">
+              <input type="text" id="project_new_title" class="form-control"></div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-3 control-label" for="textInput2-modal-markup">Description</label>
+            <div class="col-sm-9">
+              <input type="text" id="project_new_description" class="form-control"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="col-sm-3 control-label" for="textInput2-modal-markup">Save to</label>
+            <div class="col-sm-9">
+              <div class="input-group">
+                <input type="text" id="project_new_workingdir" class="form-control" readonly>
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" onclick="ProjectNewModal.choose_wkdir()"><span class="fa fa-ellipsis-h"></span></button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </form>
+        <input type="text" id="project_new_from" class="form-control" readonly style="display:none">
+        <div class="alert alert-danger" id="project_new_alert" style="display:none">
+          <span class="pficon pficon-error-circle-o"></span><p id="project_new_error"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="ProjectNewModal.create()">Create</button>
+      </div>
+    </div>
+  </div>
+</div>
