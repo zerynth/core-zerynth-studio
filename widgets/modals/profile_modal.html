@@ -18,55 +18,6 @@ var ProfileModal = {
    * @returns None
    **/
   __fill: function(data){
-    // remap every device target in free asset with its related device name
-    // to improve data visualization
-    data.new_free_assets =_.map(ZDevices.targets,(v,k,l)=>{
-      var nn = {};
-      var asset = _.find(data.assets.free,(item)=>{return item.target == k})
-      if(asset){
-        nn.current = asset.current
-      }
-      else{
-        nn.current = 0;
-      }
-      nn.target = v.name
-      return nn
-    })
-    // group pro asset per rtos aggregating current and limit values;
-    // group targets per device per rtos aggregating current value and remapping 
-    // device target with its related device name
-    var rtos_group = _.groupBy(data.assets.vm, function(item){return item.rtos;})
-    data.new_rtos_assets = _.map(rtos_group,(v,k,l)=>{
-      var xx = {};
-      xx.rtos = k;
-      xx.limit = _.reduce(v, function(memo, num){ return memo + num.limit; }, 0);
-      xx.current = _.reduce(v, function(memo, num){ return memo + num.current; }, 0);
-      xx.remaining = xx.limit - xx.current;
-      var target_group = _.groupBy(_.flatten(_.map(v, (v2,k2,l2)=>{
-          return v2.targets
-        })),function(item2){return item2.target});
-      xx.targets = _.map(target_group,(v2,k2,l2)=>{
-          var yy = {}
-          var dev = _.find(ZDevices.targets,(item)=>{
-            return item.target==k2
-          })
-          yy.target = dev.name;
-          yy.current = _.reduce(v2, function(memo, num){return memo + num.current;},0);
-          yy.limit = xx.current;
-          return yy;
-        })
-      return xx;
-    })
-    // sort free asset per current value (from high to low)
-    data.new_free_assets = _.sortBy(data.new_free_assets, 'current').reverse()
-    // sort pro asset per rtos per current value (from high to low)
-    if (data.new_rtos_assets.length>0){
-      data.new_rtos_assets = _.sortBy(data.new_rtos_assets, 'rtos')
-      _.each(data.new_rtos_assets, function(item){
-        item.targets = _.sortBy(item.targets, 'current').reverse()
-        return item
-      })
-    }
     // sort history list per most recent date
     if (data.history.length>0){
       data.history = _.map(data.history, function(v,k,l){
@@ -75,16 +26,62 @@ var ProfileModal = {
       })
       data.history = _.sortBy(data.history, 'date').reverse()
     }
-    data.pro_asset = (_.find(data.badges,(item)=>{return item.name == "pro_asset_received"})) ? true:false;
     data.profile100 = (_.find(data.badges,(item)=>{return item.name == "completed_profile"})) ? true:false;
-    // if (data.badges.length>0){
-    //   data.badges = _.map(data.badges,(v,k,l)=>{
-    //     var bb = {};
-    //     bb = v
-    //     bb.title = ZConf.badges[v.name]
-    //     return bb
-    //   })  
-    // }
+    data.starter_table = _.map(data.assets.table,(v,k,l)=>{
+      var xx = {};
+      xx.rtos = k;
+      xx.remaining = v.starter.remaining;
+      xx.total = v.starter.total;
+      xx.consumed = v.starter.total-v.starter.remaining;
+      xx.targets = _.filter(_.map(data.assets.targets,(v2,k2,l2)=>{
+        yy = {};
+        var dev = _.find(ZDevices.targets,(item)=>{
+            return item.target==k2
+          })
+        yy.target = dev.name;
+        if (k in v2) {
+          yy.consumed = v2[k].starter
+        }
+        return yy
+      }),(item)=>{return item.consumed});
+
+      return xx;
+    })
+    data.premium_table = _.map(data.assets.table,(v,k,l)=>{
+      var xx = {};
+      xx.rtos = k;
+      xx.remaining = v.premium.remaining;
+      xx.total = v.premium.total;
+      xx.consumed = v.premium.total-v.premium.remaining;
+      xx.targets = _.filter(_.map(data.assets.targets,(v2,k2,l2)=>{
+        yy = {};
+        var dev = _.find(ZDevices.targets,(item)=>{
+            return item.target==k2
+          })
+        yy.target = dev.name;
+        if (k in v2) {
+          yy.consumed = v2[k].premium
+        }
+        return yy
+      }),(item)=>{return item.consumed});
+
+      return xx;
+    })
+    data.starter_table = _.sortBy(data.starter_table, 'rtos')
+      _.each(data.starter_table, function(item){
+        item.targets = _.sortBy(item.targets, 'consumed').reverse()
+        return item
+      })
+    data.premium_table = _.sortBy(data.premium_table, 'rtos')
+      _.each(data.premium_table, function(item){
+        item.targets = _.sortBy(item.targets, 'consumed').reverse()
+        return item
+      })
+    data.repositories = _.map(data.repositories,(v,k,l)=>{
+      var xx = {}
+      xx.repo = v
+      return xx
+    });
     console.log(data)
 
     // renderind of the profile template in the profile div
@@ -93,19 +90,33 @@ var ProfileModal = {
     $('a[target=_blank]').on('click', function(){
       return ProfileModal.open_browser(this.href);
     });
-    // handle of vmpro_history_selector showing/hiding related sections
-    $('#vmpro_history_selector input:radio[name="options"]').change(function(){
+    // handle of starter_vms_selector showing/hiding related sections
+    $('#starter_vms_selector input:radio[name="starter_sel"]').change(function(){
       if (this.value==0){
-        $(".freertos_section").show()
-        $(".chibi_section").hide()
+        $(".starter_freertos_section").show()
+        $(".starter_chibi_section").hide()
+      } else if (this.value==1){
+        $(".starter_freertos_section").hide()
+        $(".starter_chibi_section").show()
+      }
+    })
+    // handle of premium_vms_selector showing/hiding related sections
+    $('#premium_vms_selector input:radio[name="premium_sel"]').change(function(){
+      if (this.value==0){
+        $(".premium_freertos_section").show()
+        $(".premium_chibi_section").hide()
+      } else if (this.value==1){
+        $(".premium_freertos_section").hide()
+        $(".premium_chibi_section").show()
+      }
+    })
+    // handle of vms_history_selector showing/hiding related sections
+    $('#vms_history_selector input:radio[name="vms_history_sel"]').change(function(){
+      if (this.value==0){
+        $(".vms_section").show()
         $(".history_section").hide()
       } else if (this.value==1){
-        $(".freertos_section").hide()
-        $(".chibi_section").show()
-        $(".history_section").hide()
-      } else {
-        $(".freertos_section").hide()
-        $(".chibi_section").hide()
+        $(".vms_section").hide()
         $(".history_section").show()
       }
     })
@@ -319,8 +330,7 @@ var ProfileModal = {
     else var percentage = parseInt(((100*(a+b+c+d+e+f+g))/7),10)
     // fill profile completeness bar and value
     $("#profile_complete").width(String(percentage)+'%')
-    if (percentage != 100 && !data.profile100 && !data.pro_asset) $("#completeness").html("Complete your profile to get a <b><u><font color=\"#468c8c\" onmouseenter=\"$(this).popover('show')\" onmouseleave=\"$(this).popover('hide')\" data-toggle=\"popover\" data-trigger=\"manual\" data-html=\"true\" data-placement=\"bottom\" title=\"How to get your bonus\" data-content=\"Complete all profile fields to get: <ul><li>1 more Free Zerynth VM per supported device</li><li>50% discount on the Yearly Subscription of Zerynth Studio PRO for the first year</li></ul>\">Bonus</font></u></b> - "+String(percentage)+"% Complete")
-    else if (percentage != 100 && !data.profile100 && data.pro_asset) $("#completeness").html("Complete your profile to get a <b><u><font color=\"#468c8c\" onmouseenter=\"$(this).popover('show')\" onmouseleave=\"$(this).popover('hide')\" data-toggle=\"popover\" data-trigger=\"manual\" data-html=\"true\" data-placement=\"bottom\" title=\"How to get your bonus\" data-content=\"Complete all profile fields to get: <ul><li>1 more Free Zerynth VM per supported device</li></ul>\">Bonus</font></u></b> - "+String(percentage)+"% Complete")
+    if (percentage != 100 && !data.profile100) $("#completeness").html("Complete your profile to get a <b><u><font color=\"#468c8c\" onmouseenter=\"$(this).popover('show')\" onmouseleave=\"$(this).popover('hide')\" data-toggle=\"popover\" data-trigger=\"manual\" data-html=\"true\" data-placement=\"bottom\" title=\"How to get your bonus\" data-content=\"Complete all profile fields to get: <ul><li>1 more Zerynth Premium VM</li><li>30% discount on your next purchase of Zerynth licenses.</li></ul>\">Bonus</font></u></b> - "+String(percentage)+"% Complete")
     else if (percentage == 100) $("#completeness").html("<font color=\"#468c8c\">"+String(percentage)+"% Complete</font>")
     else $("#completeness").html(String(percentage)+"% Complete")
   },
@@ -394,14 +404,13 @@ var ProfileModal = {
   <div class="col-sm-6" style="height: 330px;font-size:12px;">
     <div class="text-center"><span class="fa fa-user" style="font-size:80px;color:#468c8c"></span></div>
     <div style="font-size:25px;font-weight: bold;text-align: center" >{{:display_name}}</div>
+    <br>
     <div style="font-style:italic;text-align:center">{{:email}}</div>
-    {{if subscription!="free"}}
-      <div style="text-align: center">Pro user - {{:subscription[0].toUpperCase()+subscription.substr(1)}}ly Plan{{if trial_period}} - Trial Period{{/if}}<br>(<a id="sub_manage" href="#" onmouseenter="$(this).popover()" data-toggle="popover" data-trigger="focus" data-html="true" data-placement="bottom" title="Manage your subscription" data-content="<button style='width:100%' type='button' onclick='javascript:ProfileModal.open_browser(&quot;https://store.zerynth.com/order-zerynth-studio-pro-{{if subscription == 'year'}}monthly{{else}}yearly{{/if}}-subscription/&quot;)' class='btn btn-primary'>Switch to {{if subscription == 'year'}}Monthly{{else}}Yearly{{/if}} Plan</button><br>Change your subscription and switch to {{if subscription == 'year'}}Monthly{{else}}Yearly{{/if}} Plan</a><br><br><button style='width:100%' type='button' onclick='javascript:ProfileModal.open_browser(&quot;https://store.zerynth.com/remove-subscription/&quot;)' class='btn btn-primary'>Remove Subscription</button><br>Cancel your pro user subscription and switch to free user">Manage your subscription</a>)</div>
-      <div style="text-align: center">Pro subscription {{if !sub_id}}expiring{{else trial_period}}starting{{else}}renewal{{/if}} {{:pro.slice(0,-9)}}</div>
-    {{else}}
-      <div style="text-align: center">Basic user<br>(<a href="https://store.zerynth.com" target="_blank">click here to go pro!</a>)</div>
-    {{/if}}
-    <div style="text-align: center">Active repositories: {{:repositories.join(", ")}}</div>
+    <div style="text-align: center">Active repositories:
+    {{for repositories}}
+      <a href="https://docs.zerynth.com/latest/{{:repo}}_libs.html" target="_blank">{{:repo}}</a>{{if repo!=="community"}},{{/if}}
+    {{/for}}
+    </div>
     <hr>
     <div style="text-align: left"><i>Profile Completeness</i></div>
       <div class="progress progress">
@@ -688,108 +697,126 @@ var ProfileModal = {
   </div>
 </div>
 <hr>
-<div style="font-size:15px;text-align: center">Your Free Zerynth VMs</div><br>
-<!-- Virtual Machine Detail Section -->
-<div class="text-center" style="height: 100px;overflow-y: auto;">
-  <!-- Free Virtual Machine Detail Section -->
-  <div class="free_section">
+
+<div class="vms_section" style="height: 440px;">
+  <div class="text-center" style="height: 210px;">
+    <!-- starter_vms_selector -->
+    <div style="font-size:15px;text-align: center">Your Zerynth Starter Licenses</div>
+    <div class="text-center" style="height: 30px;">
+      <div class="btn-group btn-group-sm" data-toggle="buttons" id="starter_vms_selector">
+        <label class="btn btn-primary active tooltip-br" title="VMs - FreeRTOS" id="out0">
+          <input type="radio" name="starter_sel" id="s0" autocomplete="off" value="0" checked>VMs - FreeRTOS
+        </label>
+        <label class="btn btn-primary tooltip-br" title="VMs - ChibiOS" id="out1">
+          <input type="radio" name="starter_sel" id="s1" autocomplete="off" value="1">VMs - ChibiOS
+        </label>
+      </div>
+    </div>
+    <!-- Messages in Starter VMs Section -->
+    {{if starter_table.length>1}}
+      <div class="starter_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.starter.remaining > 50}}#468c8c{{else assets.table.freertos.starter.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.starter.remaining}}</font> Zerynth Starter VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Starter VMs</a></div>
+      <div class="starter_chibi_section" style="text-align: center" hidden><font color="{{if assets.table.chibi.starter.remaining > 30}}#468c8c{{else assets.table.chibi.starter.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.chibi.starter.remaining}}</font> Zerynth Starter VMs - ChibiOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Starter VMs</a></div>
+    {{else}}
+      <div class="starter_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.starter.remaining > 50}}#468c8c{{else assets.table.freertos.starter.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.starter.remaining}}</font> Zerynth Starter VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Starter VMs</a></div>
+      <div class="starter_chibi_section" style="text-align: center" hidden><a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Starter VMs</a></div>
+    {{/if}}
+    <!-- Starter VMs Section -->
+    <div class="text-center" style="height: 135px;overflow-y: auto;">
+      <!-- Starter VMs Asset table generator -->
+      {{for starter_table}}
+        <center>
+          <div class="starter_{{:rtos}}_section" {{if rtos=='chibi'}}hidden{{/if}}>
+            <table class="table table-striped table-bordered" style="max-width: 75%;padding:4px;">
+            <tr style="background-color:#468c8c;color:#ffffff"><th width="85%">Consumed Zerynth Starter VMs - {{if rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}}</th width="15%"><th>{{:consumed}} / {{if total<0}}∞{{else}}{{:total}}{{/if}}</th></tr>
+            {{if targets.length>0}}
+              {{for targets}}
+                <tr>
+                <td>{{:target}}</td><td style="color:#468c8c;">{{:consumed}}</td>
+                </tr>
+              {{/for}}
+            {{/if}}
+            </table>
+          </div>
+        </center>
+      {{/for}}
+    </div>
+  </div>
+  <hr style="margin:10px;">
+  <div class="text-center" style="height: 210px;">
+    <!-- premium_vms_selector -->
+    <div style="font-size:15px;text-align: center">Your Zerynth Premium Licenses</div>
+    <div class="text-center" style="height: 30px;">
+      <div class="btn-group btn-group-sm" data-toggle="buttons" id="premium_vms_selector">
+        <label class="btn btn-primary active tooltip-br" title="VMs - FreeRTOS" id="out0">
+          <input type="radio" name="premium_sel" id="p0" autocomplete="off" value="0" checked>VMs - FreeRTOS
+        </label>
+        <label class="btn btn-primary tooltip-br" title="VMs - ChibiOS" id="out1">
+          <input type="radio" name="premium_sel" id="p1" autocomplete="off" value="1">VMs - ChibiOS
+        </label>
+      </div>
+    </div>
+    <!-- Messages in Premium VMs Section -->
+    {{if premium_table.length>1}}
+      <div class="premium_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.premium.remaining > 50}}#468c8c{{else assets.table.freertos.premium.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.premium.remaining}}</font> Zerynth Premium VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Premium VMs</a></div>
+      <div class="premium_chibi_section" style="text-align: center" hidden><font color="{{if assets.table.chibi.premium.remaining > 30}}#468c8c{{else assets.table.chibi.premium.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.chibi.premium.remaining}}</font> Zerynth Premium VMs - ChibiOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Premium VMs</a></div>
+    {{else}}
+      <div class="premium_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.premium.remaining.remaining > 50}}#468c8c{{else assets.table.freertos.premium.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.premium.remaining}}</font> Zerynth Premium VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Premium VMs</a></div>
+      <div class="premium_chibi_section" style="text-align: center" hidden><a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Premium VMs</a></div>
+    {{/if}}
+    <!-- Premium VMs Section -->
+    <div class="text-center" style="height: 135px;overflow-y: auto;">
+      <!-- Premium VMs Asset table generator -->
+      {{for premium_table}}
+        <center>
+          <div class="premium_{{:rtos}}_section" {{if rtos=='chibi'}}hidden{{/if}}>
+            <table class="table table-striped table-bordered" style="max-width: 75%;padding:4px;">
+            <tr style="background-color:#468c8c;color:#ffffff"><th width="85%">Consumed Zerynth Premium VMs - {{if rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}}</th><th width="15%">{{:consumed}} / {{if total<0}}∞{{else}}{{:total}}{{/if}}</th></tr>
+            {{if targets.length>0}}
+              {{for targets}}
+                <tr>
+                <td>{{:target}}</td><td style="color:#468c8c;">{{:consumed}}</td>
+                </tr>
+              {{/for}}
+            {{/if}}
+            </table>
+          </div>
+        </center>
+      {{/for}}
+    </div>
+  </div>
+</div>
+<!-- Purchase History Section -->
+<div class="history_section" style="height: 440px;" hidden>
+{{if history.length>0}}
+  <div style="font-size:15px;text-align: center">Your Purchase History</div><br>
+    <!-- Purchase History table generator -->
     <center>
-    <!-- Free Virtual Machine table generator -->
-    {{if new_free_assets.length>0}}
-      <table class="table table-striped table-bordered" style="max-width: 75%;padding:4px">
-      <tr style="background-color:#468c8c;color:#ffffff"><th>Device</th><th>Consumed / Available</th></tr>
-      {{for new_free_assets ~limit=free_limit}}
+      <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Licenses</a>
+      <table class="table table-striped table-bordered history-table" style="max-width: 75%;padding:4px">
+      <tr style="background-color:#468c8c;color:#ffffff"><th>Item</th><th>Date</th><th>Price</th><th>Receipt Number</th></tr>
+      {{for history}}
         <tr>
-        <td>
-          {{:target}}
-        </td>
-        <td style="color:{{if (current/~limit) < 0.6}}#468c8c{{else (current/~limit) < 1}}#f0ad4e{{else}}#d9534f{{/if}}">
-          {{:current}} / {{if ~limit<0}}∞{{else}}{{:~limit}}{{/if}}
-        </td>
+        <td>{{:item}}</td><td>{{:date.slice(0,-9)}}</td><td style="text-align: right">$ {{:price}}</td><td style="text-align: right">{{if order}}{{:order}}{{else}}---{{/if}}</td>
         </tr>
       {{/for}}
       </table>
-    <!-- Message for starting to virtualize the first device -->
-    {{else}}
-      <a href="https://docs.zerynth.com/latest/official/core.zerynth.docs/gettingstarted/docs/index.html#connect-register-and-virtualize-your-device" target="_blank">Learn how to virtualize your first device!</a>
-    {{/if}}
     </center>
-  </div>
-</div>
-<hr>
-<!-- vmpro_history_selector -->
-<div style="font-size:15px;text-align: center">Your Production Zerynth VMs</div>
-<div class="text-center">
-  <div class="btn-group" data-toggle="buttons" id="vmpro_history_selector">
-    <label class="btn btn-primary active tooltip-br" title="VMs - FreeRTOS" id="out0">
-      <input type="radio" name="options" id="show0" autocomplete="off" value="0" checked>VMs - FreeRTOS
-    </label>
-    <label class="btn btn-primary tooltip-br" title="VMs - ChibiOS" id="out1">
-      <input type="radio" name="options" id="show1" autocomplete="off" value="1">VMs - ChibiOS
-    </label>
-    <label class="btn btn-warning tooltip-br" title="Purchase History" id="out2">
-      <input type="radio" name="options" id="show2" autocomplete="off" value="2">Purchase History
-    </label>
-  </div>
-</div>
-<br>
-<!-- Messages in Pro VM and History Purchase Section -->
-{{if subscription=='free'}}
-  <div style="text-align: center"><a href="https://store.zerynth.com/zerynth-studio-pro/" target="_blank">Go Pro to unlock Production Zerynth VMs</a></div>
 {{else}}
-  {{if new_rtos_assets.length==0}}
-    <div class="freertos_section" style="text-align: center"><a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
-    <div class="chibi_section" style="text-align: center" hidden><a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
-  {{else new_rtos_assets.length==1}}
-    <div class="{{if new_rtos_assets[0].rtos=='chibi'}}chibi{{else}}freertos{{/if}}_section" style="text-align: center" {{if new_rtos_assets[0].rtos=='chibi'}}hidden{{/if}}><font color="{{if new_rtos_assets[0].remaining > 30}}#468c8c{{else new_rtos_assets[0].remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:new_rtos_assets[0].remaining}}</font> Zerynth VMs - {{if new_rtos_assets[0].rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}} remaining. <a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
-    <div class="{{if new_rtos_assets[0].rtos=='chibi'}}freertos{{else}}chibi{{/if}}_section" style="text-align: center" {{if new_rtos_assets[0].rtos!='chibi'}}hidden{{/if}}><a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
-  {{else}}
-    {{for new_rtos_assets}}
-      <div class="{{if rtos=='chibi'}}chibi{{else}}freertos{{/if}}_section" style="text-align: center" {{if rtos=='chibi'}}hidden{{/if}}><font color="{{if remaining > 30}}#468c8c{{else remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:remaining}}</font> Zerynth VMs - {{if rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}} remaining. <a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
-    {{/for}}
-  {{/if}}
-  <div class="history_section" style="text-align: center" hidden><a href="https://store.zerynth.com/zerynth-vm-packs/" target="_blank">Get more Production Zerynth VMs</a></div>
+  <div style="text-align: center;">No Purchase History Available</div>
 {{/if}}
-<!-- Pro VM and History Purchase Section -->
-<div class="text-center" style="height: 100px;overflow-y: auto;">
-  <!-- Pro Asset table generator -->
-  {{if new_rtos_assets.length>0}}
-    {{for new_rtos_assets ~sub=subscription}}
-      <center>
-        <div class="{{:rtos}}_section" {{if rtos=='chibi'}}hidden{{/if}}>
-          <table class="table table-striped table-bordered" style="max-width: 75%;padding:4px;{{if ~sub=='free'}}background-color: #f9f9f9;color:#c2c2c2{{/if}}">
-          <tr style="background-color:#468c8c;{{if ~sub!='free'}}color:#ffffff{{/if}}"><th>Consumed Zerynth VMs - {{if rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}}</th><th>{{:current}} / {{if limit<0}}∞{{else}}{{:limit}}{{/if}}</th></tr>
-          {{if targets.length>0}}
-            {{for targets ~ss=~sub}}
-              <tr>
-              <td>{{:target}}</td><td {{if ~ss!='free'}}style="color:#468c8c;"{{/if}}>{{:current}}</td>
-              </tr>
-            {{/for}}
-          {{/if}}
-          </table>
-        </div>
-      </center>
-    {{/for}}
-  {{/if}}
-  <!-- Purchase History table generator -->
-  {{if history.length>0}}
-    <div style="text-align: center;" class="history_section" hidden>
-      <center>
-        <table class="table table-striped table-bordered history-table" style="max-width: 75%;padding:4px">
-        <tr style="background-color:#468c8c;color:#ffffff"><th>Item</th><th>Date</th><th>Price</th><th>Receipt Number</th></tr>
-        {{for history}}
-          <tr>
-          <td>{{:item}}</td><td>{{:date.slice(0,-9)}}</td><td style="text-align: right">$ {{:price}}</td><td style="text-align: right">{{if order}}{{:order}}{{else}}---{{/if}}</td>
-          </tr>
-        {{/for}}
-        </table>
-      </center>
-    </div>
-  {{else}}
-    <div style="text-align: center;" class="history_section" hidden>No Purchase History Available</div>
-  {{/if}}
 </div>
-<hr>
+<hr style="margin:10px;">
+<!-- VMs/PurchaseHistory Selector -->
+<center><div class="btn-group" data-toggle="buttons" id="vms_history_selector">
+  <label class="btn btn-primary active tooltip-br" title="Zerynth VMs" id="out0">
+    <input type="radio" name="vms_history_sel" id="vmp0" autocomplete="off" value="0" checked>Zerynth VMs
+  </label>
+  <label class="btn btn-warning tooltip-br" title="Purchase History" id="out1">
+    <input type="radio" name="vms_history_sel" id="vmp1" autocomplete="off" value="1">Purchase History
+  </label>
+</div></center>
+
+
 <!-- {{if badges.length>0}}
 <div style="font-size:15px;text-align: center">Earned Badges</div>
 <center>

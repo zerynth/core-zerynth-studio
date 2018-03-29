@@ -3,8 +3,9 @@
 var VirtualizeModal = {
   __fill: function(data){
     //data must have at least one element, check somewhere else before calling
+    $("#virtualize_alert").hide()
     var picker = $("#vms_list")
-    var header = '<tr style="background-color:#468c8c;color:#ffffff"><th>#</th><th>Device</th><th>RTOS</th><th>Version</th><th>Features</th><tr>'
+    var header = '<tr style="background-color:#468c8c;color:#ffffff"><th>#</th><th>Device</th><th>RTOS</th><th>License</th><th>Features</th><th>Patch</th><tr>'
     console.log(data)
 
     data = _.sortBy(data,"features")
@@ -17,6 +18,7 @@ var VirtualizeModal = {
         uuid:v.uuid,
         index:k,
         version:v.version,
+        patch:v.patch,
         rtos: ZConf.rtoses[v.rtos],
         features: _.map(v.features,(vv,kk,ll)=>{ return ZConf.features[vv]}).join(", ") || "---",
         devname: _.find(ZDevices.targets,(item)=>{ return item.target==v.target }).name
@@ -35,7 +37,13 @@ var VirtualizeModal = {
   __hide: function(){
     $("#virtualize_modal").modal("hide")
   },
+  select: function(row){
+    row.children('td').children('input').prop('checked', true);
+    row.removeClass('selected');
+    row.toggleClass('selected');
+  },
   virtualize: function(){
+      $("#virtualize_alert").hide()
       var selected = $("#vms_list option:selected").val()
       var selected = $('#vms_list input[name="vms"]:checked').val()
       if(Store.actions()) return;
@@ -66,12 +74,13 @@ var VirtualizeModal = {
 </script>
 </script>
 <script id="virtualize_modal_row" type="text/x-jsrender">
-<tr>
+<tr onclick="VirtualizeModal.select($(this))">
   <td><input type="radio" value="{{:uuid}}" name="vms" {{if index==0}}checked{{/if}}></td>
   <td>{{:devname}}</td>
   <td>{{:rtos}}</td>
-  <td>{{:version}}</td>
+  <td>{{if features == '---'}}Starter{{else}}Premium{{/if}}</td>
   <td>{{:features}}</td>
+  <td>{{:patch.toUpperCase()}}</td>  
 </tr>
 </script>
 <style>

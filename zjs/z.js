@@ -13,7 +13,12 @@ var Z = {
         Z.logparent=$(logpid)
     },
     homedir: function(){
-        return Z.os.homedir()
+        if (process.env.ZERYNTH_HOME) {
+            return process.env.ZERYNTH_HOME
+        } else {
+            return Z.os.homedir()
+        
+        }
     },
     shift_until: function(path,matches){
         var pths = path.split(/\\|\//)
@@ -29,9 +34,11 @@ var Z = {
         var zz = (plt=="windows64") ? "zerynth2":".zerynth2"
         if (process.env.ZERYNTH_TESTMODE == 2){
             zz = (plt=="windows64") ? "zerynth2_test":".zerynth2_test"
+        } else if (process.env.ZERYNTH_TESTMODE == 1){
+            zz = (plt=="windows64") ? "zerynth2_local":".zerynth2_local"
         }
-        if (path) return Z.path.join(Z.os.homedir(),zz,path);
-        else return Z.path.join(Z.os.homedir(),zz);
+        if (path) return Z.path.join(Z.homedir(),zz,path);
+        else return Z.path.join(Z.homedir(),zz);
     },
     log: function(msg){
         //console.log(msg)

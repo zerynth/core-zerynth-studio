@@ -8,18 +8,6 @@ var ZConf = {
     index_file: Z.zdir("index.json"),
     tempdir:Z.zdir("tmp"),
     sysdir:Z.zdir("sys"),
-    rtoses: {
-        "chibi2":"Chibi OS 2.6.8",
-        "freertos9":"FreeRTOS 9.0.0",
-        "esp8266-rtos":"FreeRTOS 7.5.2",
-        "esp32-rtos":"FreeRTOS 8.2.0 (SMP)",
-    },
-    features: {
-        "powersave":"Optimized for Powersaving",
-        "ota": "FOTA enabled",
-        "securefw":"Secure Firmware",
-        "nrf52_ble": "BLE enabled"
-    },
     "badges":{
         "completed_profile": "Completed Profile 100%",
         "trial_period_tapped": "Trial Period Released",

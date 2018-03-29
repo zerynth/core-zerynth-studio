@@ -7,6 +7,14 @@ var ExampleView = {
         Bus.addEventListener("ex_show",ExampleView.redraw,ExampleView)
         $("#ex_info").prop("disabled",true)
         $("#ex_open").prop("disabled",true)
+        $("#ex_search .form-control").keydown(function (e) {
+        if (e.keyCode==13) {
+            var query = $("#ex_search .form-control").val()
+            ExampleView.search(query)
+            e.preventDefault()
+            return false
+        }
+      });
     },
     current_node: null,
     on_node_selected: function(event,node){

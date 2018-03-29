@@ -43,8 +43,8 @@ var Footer = {
 }
 
 function handle_footer_notify(div){
-    if (div.id=="gopro_label"){
-        require('nw.gui').Shell.openExternal("https://store.zerynth.com/zerynth-studio-pro/");
+    if (div.id=="buyvms_label"){
+        require('nw.gui').Shell.openExternal("https://store.zerynth.com/");
     } else if (div.id=="systemupdate_label"){
         Dialogs.modal("UpdateModal",Footer.versions)
     } else if (div.id=="patches_label"){
@@ -56,7 +56,7 @@ function handle_footer_notify(div){
 }
 </script>
 <div id="notify_area">
-<span id="test_label" class="label label-warning" style="display:none">TEST VERSION</span>
+<span id="test_label" class="label label-warning" style="display:none">LOCAL VERSION</span>
 <span id="ci_label" class="label label-warning" style="display:none">CI VERSION</span>
 <span id="messages_label" class="label label-success" onclick="handle_footer_notify(this)"><span class="fa fa-envelope-o"></span>&nbsp;<span id="messages_label_num"></span></span>
 <span id="patches_label" class="label label-success" onclick="handle_footer_notify(this)"><span class="fa fa-fw fa-download"></span>Rolling update</span>

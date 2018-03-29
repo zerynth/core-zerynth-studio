@@ -8,7 +8,7 @@ Zerynth Studio is an integrated development environment (IDE) that runs on Windo
 
 Through Zerynth Studio all the supported boards can be managed and  programs can be developed in Python 3 or hybrid C/Python. Projects developed with Zerynth Studio can be saved locally or pushed as private git repository to the Zerynth backend.
 
-.. figure:: /custom/img/zerynth_studio.jpg
+.. figure:: /custom/img/zerynth_studio.png
    :align: center
    :figwidth: 100%  
    :alt: Zerynth Studio
@@ -94,52 +94,75 @@ Zerynth Studio provides all Zerynth Account Profile information in the Profile S
    :figwidth: 100% 
    :alt: Profile Section
 
-The Profile Section is divided into four main area:
+The Profile Section is divided into five main area:
 
 * :ref:`Account Info <zerynth-studio-account-info>`;
 * :ref:`Personal Info <zerynth-studio-personal-info>`;
-* :ref:`Free Zerynth VMs Info <zerynth-studio-free-vms-info>`;
-* :ref:`Production Zerynth VMs Info <zerynth-studio-production-vms-info>`.
+* :ref:`Zerynth Starter Licenses Info <zerynth-studio-starter-info>`;
+* :ref:`Zerynth Premium Licenses Info <zerynth-studio-premium-info>`.
+* :ref:`History Purchase Info <zerynth-studio-history-info>`.
 
 .. _zerynth-studio-account-info:
 
 Account Info Area
 ^^^^^^^^^^^^^^^^^
 
-In this section the Zerynth User can retrieve the username and email inserted during the registration sequence and his asset.
+In this section the Zerynth User can retrieve the username and email inserted during the registration sequence.
 
-.. note:: Pro User can also check their current subscription type (Monthly or Yearly) with the related renewal date and can manage their subscription at any time (like switching to different plans or downgrading to free user).
-
-"Active Repositories" field shows the list of packages and library repositories available to the specific Zerynth User. The "Profile Completeness" bar shows the completion percentage of the user personal profile form.
+“Active Repositories” field shows the list of library repositories available to the specific Zerynth User. The “Profile Completeness” bar shows the completion percentage of the user personal profile form.
 
 .. _zerynth-studio-personal-info:
 
 Personal Info Area
 ^^^^^^^^^^^^^^^^^^
 
-In this area all personal information are displayed and the Zerynth User is free to fill the form, inserting the name, last name, age, country, job, company/organization and website.
+This area show all the personal information. The Zerynth User is free to fill the form, inserting the name, last name, age, country, job, company/organization and website.
 
-After clicking the "save" button, the inserted information are stored and profile completeness percentage are recalculated.
+After clicking the “save” button, the inserted information are stored and profile completeness percentage are recalculated.
 
-.. _zerynth-studio-free-vms-info:
+.. _zerynth-studio-starter-info:
 
-Free Zerynth VMs Section
+Zerynth Starter Licenses Section
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In this section the Zerynth User can monitor the status his Zerynth Starter assets in different views related to the available and supported real time operating system:
+
+* VMs - FreeRTOS: the table shows how many Zerynth Starter VMs with FreeRTOS have been consumed out of the total owned, including the detail about the distribution of the consumed VMs among the user devices;
+* VMs - ChibiOS: the table shows, as above, the status of the available and consumed Zerynth Starter VMs with ChibiOS.
+
+.. _zerynth-studio-premium-info:
+
+Zerynth Premium Licenses Section
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In this section the Zerynth User can monitor the status his Zerynth Premium assets in different views related to the available and supported real time operating system:
+
+* VMs - FreeRTOS: the table shows how many Zerynth Premium VMs with FreeRTOS have been consumed out of the total owned, including the detail about the distribution of the consumed VMs among the user devices;
+* VMs - ChibiOS: the table shows, as above, the status of the available and consumed Zerynth Premium VMs with ChibiOS.
+
+.. note:: The difference between Starter and Premium is related to the Zerynth Virtual Machine features:
+
+                 * a Starter VM is a basic virtual machine.
+                 * a Premium VM is a virtual machine with special features like FOTA (Firmware Over The Air), Powersaving, Secure Firmware, or combination of them.
+
+.. figure:: /custom/img/vm_comp_table.png
+   :align: center
+   :figwidth: 70% 
+   :alt: Virtual Machines Comparison Table
+
+.. _zerynth-studio-history-info:
+
+Purchase History Section
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-In this section the Zerynth User can monitor the status of the available free Zerynth VMs Asset; the table shows how many free VMs for each supported device have been used out of the total available.
+By clicking the orange "Purchase History" button, the Purchase History table is displayed.
 
-.. _zerynth-studio-production-vms-info:
+.. figure:: /custom/img/history.png
+   :align: center
+   :figwidth: 100% 
+   :alt: Profile Section
 
-Production Zerynth VMs Section
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In this area the Zerynth Pro User can check all the purchased Zerynth VMs Production assets in three different views:
-
-* VMs - FreeRTOS: the table shows how many Zerynth Pro VMs with FreeRTOS have been consumed out of the total purchased, including the detail about the distribution of the consumed VMs among the available devices;
-* VMs - ChibiOS: the table shows, as above, the status of the available and consumed Zerynth VMs with ChibiOS;
-* Purchase History: the table shows the purchase history for the user; each row represents a Zerynth product purchase with related description, date, price, and receipt number for any reference.
-
-.. note:: if a Pro User decides to downgrade to Free User, the Zerynth Pro Assets (like the Production VMs) will be frozen until a new upgrade to Zerynth Studio Pro.
+Through this table the user can retrieve all the information about the owned assets ordered by date with description and creation date; the receipt number is also indicated for purchased assets.
 
 .. _zstudio-code_editor:
 

@@ -235,16 +235,15 @@ var App = {
         })
     },
     on_profile: function(){
-        $(".viperLogo").attr("src","img/zerynthlogo.png")
-        $(".viperLogo").attr("title","")
-        $("#gopro_label").show()
-        App.mail_support_menu.enabled=false
-        if(Store.profile && Store.profile.subscription!="free"){
-            $(".viperLogo").attr("src","img/zerynthlogopro.png")
-            $(".viperLogo").attr("title","Subscription ends: "+Store.profile.pro.slice(0,-9))
-            $("#gopro_label").hide()
-            App.mail_support_menu.enabled=true
-        }
+        $(".zerynthLogo").attr("src","img/zerynthlogo.png")
+        $(".zerynthLogo").attr("title","")
+        //$("#buyvms_label").hide()
+        App.mail_support_menu.enabled=true
+        // if(Store.profile && Store.profile.subscription!="free"){
+        //     $(".zerynthLogo").attr("src","img/zerynthlogopro.png")
+        //     $(".zerynthLogo").attr("title","Subscription ends: "+Store.profile.pro.slice(0,-9))
+        //     App.mail_support_menu.enabled=true
+        // }
     },
     on_login: function(){
         //on successful login
@@ -987,6 +986,15 @@ var App = {
                 .then((profile)=>{
                     Store.set_profile(profile)
                     Dialogs.modal("ProfileModal",Store.profile)
+                })
+                .catch((err)=>{
+                    Z.log("Error while loading profile! "+err)
+                })
+    },
+    upd_profile: function(){
+            ZTC.get_profile()
+                .then((profile)=>{
+                    Store.set_profile(profile)
                 })
                 .catch((err)=>{
                     Z.log("Error while loading profile! "+err)

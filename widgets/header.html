@@ -1,5 +1,5 @@
             <!-- CMP: Zerynth Logo -->
-            <img class="viperLogo" src="img/zerynthlogo.png" style="width:30px;height:30px;padding:1px"/>
+            <img class="zerynthLogo" src="img/zerynthlogo.png" style="width:30px;height:30px;padding:1px"/>
             <!-- CMP: List of Opened Projects -->
             <select class="selectpicker" id="project_picker">
             </select>
@@ -31,10 +31,10 @@
                     <span class="zerynth zerynth-terminal2"></span>
                 </button>
             </div>
-            <div class="btn-group" style="display:inline-block;position:absolute;right:4px;top:3px">
+            <div class="btn-group" style="display:inline-block;position:absolute;right:8px;top:3px">
                 <button id="profileButton" type="button" class="btn btn-default" onclick="App.show_profile()" title="Profile and Assets">
-                    <span class="fa fa-user"></span>
+                   <span class="fa fa-user"></span>
                 </button>
-                <span id="gopro_label" class="label label-warning" onclick="handle_footer_notify(this)" style="margin-left:4px;top:2px;cursor: pointer;position:relative">Go Pro!</span>
-
+                <button id="buyvms_label" type="button" class="btn btn-warning" onclick="handle_footer_notify(this)" style="left:4px">Get Licenses
+                </button>
             </div>

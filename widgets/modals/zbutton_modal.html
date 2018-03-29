@@ -153,8 +153,15 @@ var ZButtonModal = {
     var target = ZButtonModal.dev.target
     ZTC.vmlist(target)
         .then((vms)=>{
-            ZButtonModal.__hide()
-            Dialogs.modal("CreateVMModal",{dev:ZButtonModal.dev,vms:vms,callback:() =>{ZButtonModal.__show(); ZButtonModal.adjust()}})
+            ZTC.vmlistcreated(ZButtonModal.dev.remote_id)
+              .then((my_vms)=>{
+                ZButtonModal.__hide()
+                Dialogs.modal("CreateVMModal",{dev:ZButtonModal.dev,vms:vms, my_vms:my_vms,callback:() =>{ZButtonModal.__show(); ZButtonModal.adjust()}})
+              })
+              .catch((err)=>{
+                ZButtonModal.__hide()
+                Z.log("Error retrieving created vm list")
+              })
         })
         .catch((err)=>{
             ZButtonModal.__hide()
@@ -164,8 +171,22 @@ var ZButtonModal = {
   virtualize: function(){
     var chipid = ZButtonModal.chipid
     var target = ZButtonModal.dev.target
-    ZButtonModal.__hide()
-    Dialogs.modal("VirtualizeModal",Store.vms[target][chipid])
+    if (!ZConf.rtoses || !ZConf.features){
+      ZTC.vmlist(target)
+        .then((vms)=>{
+          ZConf.rtoses = vms.rtoses
+          ZConf.features = vms.features
+          ZButtonModal.__hide()
+          Dialogs.modal("VirtualizeModal",Store.vms[target][chipid])
+        })
+        .catch((err)=>{
+          Z.log("Error retrieving vms info")
+        })
+    }
+    else {
+      ZButtonModal.__hide()
+      Dialogs.modal("VirtualizeModal",Store.vms[target][chipid])
+    }
   }
 }
 

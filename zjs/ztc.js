@@ -308,9 +308,23 @@ var ZTC = {
             })
         })
     },
+    vmlistcreated: function(remoteid){
+        return new Promise((resolve,reject)=>{
+            var res
+            ZTC.command(["vm","list","--dev_uid",remoteid],{
+                stdout: (line)=>{
+                    res = JSON.parse(line)
+                }
+            }).then(()=>{
+                resolve(res)
+            }).catch((err)=>{
+                reject(err)
+            })
+        })
+    },
     vmcreate: function(vm,dev){
         return new Promise((resolve,reject)=>{
-            var cmd = ["vm","create",dev.alias,vm.version,vm.thevm.rtos]
+            var cmd = ["vm","create",dev.alias,vm.version,vm.thevm.rtos,vm.patch]
             _.each(vm.thevm.features,(v,k,l)=>{cmd.push("--feat");cmd.push(v)})
             ZTC.command(cmd)
                 .then(()=>{

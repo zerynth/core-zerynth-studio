@@ -3,34 +3,53 @@
 var CreateVMModal = {
   dev: null,
   vms: null,
+  patches: null,
+  changelog: null,
   callback: null,
   __fill: function(data){
-    
-    var cnt = 0
-    versions = _.keys(data.vms)
-    _.each(versions,(v,k,l)=>{
-      cnt+=data.vms[v].length
-    })
-    if (cnt<=0){
+    console.log(data) 
+    var vmdata = data.vms
+    var patches = vmdata["patches"]
+    if (patches.length<=0){
       CreateVMModal.vms=null
       return
     }
     var vms = []
 
-    cnt=0
-    _.each(versions,(version,idx,allvm)=>{
-        _.each(data.vms[version],(v,k,l)=>{
+    vm_number = 0
+    _.each(patches,(patch,idx,allvm)=>{
+        var cnt=0
+        _.each(vmdata.vms[patch],(v,k,l)=>{
+          // basic_rtos = vmdata.rtoses[v.rtos].split(" ")[0].toLowerCase();
+          license = v.pro ? ("premium"):("starter");
+          xx = _.find(Store.profile.assets.table,(v2,k2,l2)=>{
+            return k2==v.generic_rtos
+          })
+          yy = _.find(xx,(v2,k2,l2)=>{
+            return k2==license
+          })
+          vm_exists = _.filter(data.my_vms.list,(v2,k2,l2)=>{
+            return v2.rtos==v.rtos && v2.pro==v.pro
+          })
+          available = vm_exists.length > 0 ? (true) : (false);
+          if (!available && yy) {
+            available = yy.remaining ? (true) : (false);
+          }
           vms.push({
             title:v.title,
-            version: version,
+            patch: patch,
+            version: ZConf.vrs,
             description:v.description,
-            rtos: ZConf.rtoses[v.rtos] || "None",
-            features: _.map(v.features,(vv,kk,ll)=>{ return ZConf.features[vv]}).join(", ") || "---",
+            rtos: vmdata.rtoses[v.rtos] || "None",
+            features: _.map(v.features,(vv,kk,ll)=>{ return vmdata.features[vv]}).join(", ") || "---",
             thevm: v,
-            pro:v.pro ? ('<img title="Pro only" src="img/zerynthlogopro.png">'):('<img src="img/zerynthlogo.png">'),
-            index:cnt
+            pro:license,
+            index:cnt,
+            num:vm_number,
+            available: available
           })
           cnt++
+          vm_number++
         })
     })
     if (data.dev.chipid){
@@ -38,14 +57,27 @@ var CreateVMModal = {
     } else {
       $("#create_vm_title").html("Create VM for "+data.dev.name+" (unknown id)")
     }
-    var header = '<tr style="background-color:#468c8c;color:#ffffff"><th>#</th><th>Title</th><th>Version</th><th>RTOS</th><th>Features</th><th>Availability</th><tr>'
-    $("#createvm_modal_table").html(header+$.templates("#createvm_modal_row").render(vms))
+
+    
+    //$("#createvm_modal_table").html($.templates("#createvm_modal_row").render({ patches:patches, changelog:vmdata.changelog,vms:vms}))
+
+    var new_patches = _.map(patches,(elem)=>{
+      var xx = {};
+      xx.patch = elem;
+      return xx
+    })
+    $("#createvm_modal_div").html("")
     CreateVMModal.dev = data.dev
     CreateVMModal.vms = vms
+    CreateVMModal.patches = patches
+    CreateVMModal.new_patches = new_patches
+    CreateVMModal.changelog = vmdata["changelog"]
     CreateVMModal.callback = data.callback
+    console.log(CreateVMModal)
     $("#createvm_modal").on("hidden.bs.modal", function () {
       if (CreateVMModal.callback) CreateVMModal.callback()
     });
+    CreateVMModal.display_patch(new_patches[patches.length-1].patch)
   },
   __show: function(){
     if(!CreateVMModal.vms){
@@ -63,13 +95,26 @@ var CreateVMModal = {
         CreateVMModal.__hide()
         Z.log("VM created! You can now virtualize your "+dev.target)
         ZDevices.disambiguate()
+        App.upd_profile()
       })
       .catch((err)=>{
         CreateVMModal.__hide()
       })
   },
+  display_patch: function(patch_name){
+    var html=""
+    var cc = CreateVMModal.changelog[patch_name]
+    var vv = _.filter(CreateVMModal.vms,(item)=>{return item.patch==patch_name})
+    html=$.templates("#createvm_modal_table2").render({patch:patch_name,changelog:cc,vms:vv,patches:CreateVMModal.new_patches})
+    $("#createvm_modal_div").html(html)
+  },
+  select: function(row){
+    row.children('td').children('input').prop('checked', true);
+    row.removeClass('selected');
+    row.toggleClass('selected');
+  },
   create: function(){
-    var sel = $('#createvm_modal_table input[name="vms"]:checked').val()
+    var sel = $('#createvm_modal input[name="vms"]:checked').val()
     var vm = CreateVMModal.vms[sel]
     var dev = CreateVMModal.dev
     Z.log("Creating VM for "+dev.target+"...")
@@ -86,15 +131,37 @@ var CreateVMModal = {
 }
 
 </script>
-<script id="createvm_modal_row" type="text/x-jsrender">
-<tr>
-  <td><input type="radio" value="{{:index}}" name="vms" {{if index==0}}checked{{/if}}></td>
-  <td>{{:title}}</td>
-  <td>{{:version}}</td>
-  <td>{{:rtos}}</td>
-  <td>{{:features}}</td>
-  <td style="text-align:center">{{:pro}}</td>
-</tr>
+<script id="createvm_modal_table2" type="text/x-jsrender">
+    <div style="font-size:15px;text-align: center">Create a Virtual Machine</div>
+    <div style="font-size:15px;text-align: center">{{:patch.toUpperCase()}} RELEASE - Changelog: {{:changelog}}</div>
+    <hr>
+    {{if patches.length>1}}
+      <div style="font-size:15px;text-align: center" id="createvm_modal_ptch">Available patches:
+        <br>
+        <div id="patch_selector" class="btn-group" data-toggle="buttons">
+          {{for patches ~cur=patch}}
+            <label class="btn btn-{{if patch=='base'}}primary{{else}}warning{{/if}}">
+              <input type="radio" name="patch_sel" id="input_{{:patch}}" value="{{:patch}}" onchange="CreateVMModal.display_patch('{{:patch}}')">{{:patch.toUpperCase()}}
+            </label>
+          {{/for}}  
+        </div>
+      </div>
+    <hr>
+    {{/if}}
+    <p>Select one of the available configurations</p>
+    <table class="table table-striped table-bordered" style="max-height: 600px;padding:4px">
+    <tr style="background-color:#468c8c;color:#ffffff"><th style="width:5%">#</th><th style="width:30%">Configuration</th><th style="width:15%">RTOS</th><th style="width:30%">Features</th><th style="width:10%">License</th><th style="width:10%">Available</th><tr>
+    {{for vms ~cur=patch}}
+            <tr onclick="CreateVMModal.select($(this))">
+              <td><input type="radio" value="{{:num}}" name="vms" {{if index==0}}checked{{/if}}></td>
+              <td>{{:title}} ({{:~cur.toUpperCase()}})</td>
+              <td>{{:rtos}}</td>
+              <td>{{:features}}</td>
+              <td>{{:pro[0].toUpperCase()+pro.substr(1)}}</td>
+              <td style="text-align:center"><i class="glyphicon glyphicon-{{if available}}ok{{else}}remove{{/if}}" style="color:{{if available}}#3c763d{{else}}#a94442{{/if}}"></i></td>
+            </tr>
+    {{/for}}
+    </table>
 </script>
 <style>
 #createvm_modal_table td,
@@ -103,7 +170,7 @@ var CreateVMModal = {
 }
 </style>
 <div class="modal fade" style="height:100%;overflow-y: auto;" id="createvm_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-dialog" style="min-width: 60%;">
+  <div class="modal-dialog" style="min-width: 70%;">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
@@ -112,9 +179,7 @@ var CreateVMModal = {
         <h4 class="modal-title" id="create_vm_title">Create VM</h4>
       </div>
       <div class="modal-body">
-
-        <p>Select one of the available configurations</p>
-        <table class="table table-striped table-bordered" id="createvm_modal_table" style="max-height: 600px;padding:4px"></table>
+        <div id="createvm_modal_div"></div>
         <div class="alert alert-danger" style="display:none">
           <span class="pficon pficon-error-circle-o"></span><p id="createvm_error"></p>
         </div>
