@@ -12,7 +12,7 @@ var CodeTabs = {
         return _.sortBy(_.map(Store.docs.items,function(v,k,l){
             return {
                 title:v.name,
-                locked: (!Store.projects.current) ? true:v.project.path!=Store.projects.current.path,
+                locked: (!Store.projects.current) ? true:((v.project) ? (v.project.path!=Store.projects.current.path):(false)),
                 active: (!Store.docs.current) ? false:v.file==Store.docs.current.file,
                 doc: v,
                 proj: v.project

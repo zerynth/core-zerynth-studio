@@ -33,6 +33,7 @@
         <link rel="stylesheet" href="bower_components/bootstrap-switch/dist/css/bootstrap3/bootstrap-switch.min.css">
         <script src="bower_components/bootstrap-switch/dist/js/bootstrap-switch.min.js"></script>
         <script src="bower_components/patternfly-bootstrap-treeview/dist/bootstrap-treeview.min.js"></script>
+        <link  href="bower_components/bootstrap-combobox/css/bootstrap-combobox.css" rel="stylesheet" media="screen, print">
         <script src="bower_components/bootstrap-combobox/js/bootstrap-combobox.js"></script>
         <script src="bower_components/bootstrap-tagsinput/src/bootstrap-tagsinput.js"></script>
         <link rel="stylesheet" href="bower_components/bootstrap-tagsinput/src/bootstrap-tagsinput.css">
@@ -45,6 +46,9 @@
 
         <link rel="stylesheet" href="bower_components/jquery-shorten-js/dist/css/shorten.min.css">
         <script src="bower_components/jquery-shorten-js/dist/jquery-shorten.min.js"></script>
+        
+        <link rel="stylesheet" href="bower_components/bootstrap-table/dist/bootstra-table.min.css">
+        <script src="bower_components/bootstrap-table/dist/bootstrap-table.min.js"></script>
 
         <!-- Fuse -->
         <script src="bower_components/fuse.js/src/fuse.min.js"></script>
@@ -104,6 +108,7 @@
             <div class="zwidget" target="widgets/consoles_view.html"></div>
             <div class="zwidget" target="widgets/feeds_view.html"></div>
             <div class="zwidget" target="widgets/things_view.html"></div>
+            <div class="zwidget" target="widgets/cvm_view.html"></div>
         </div>
         <!-- <div class="ui-layout-east">EAST</div> -->
         <div class="ui-layout-center" id="centerDiv" style="padding:0px">
@@ -126,6 +131,7 @@
 <!-- <div class="zwidget" target="widgets/modals/project_publish.html"></div> -->
 <div class="zwidget" target="widgets/modals/library_publish.html"></div>
 <div class="zwidget" target="widgets/modals/device_disambiguate.html"></div>
+<div class="zwidget" target="widgets/modals/devicemanage_modal.html"></div>
 <div class="zwidget" target="widgets/modals/deviceadd_modal.html"></div>
 <div class="zwidget" target="widgets/modals/deviceinfo_modal.html"></div>
 <div class="zwidget" target="widgets/modals/devicepinmap_modal.html"></div>
@@ -143,8 +149,10 @@
 <div class="zwidget" target="widgets/modals/zbutton_modal.html"></div>
 <div class="zwidget" target="widgets/modals/messages_modal.html"></div>
 <div class="zwidget" target="widgets/modals/patches_modal.html"></div>
+<div class="zwidget" target="widgets/modals/cvmadd_modal.html"></div>
 
 <!-- MISC -->
+<input id="open_file_hidden_input" type="file" style="display:none"/>
 <input id="open_dir_hidden_input" type="file" nwdirectory style="display:none"/>
 <input id="save_file_hidden_input"type="file" nwsaveas style="display:none"/>
 <input id="save_dir_hidden_input"type="file" nwsaveas nwdirectory style="display:none"/>

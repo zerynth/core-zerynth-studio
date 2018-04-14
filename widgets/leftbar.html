@@ -7,6 +7,7 @@
     <button id="leftbar_news" class="btn btn-link" title="News Feed" onclick="javascript:LeftBar.select('news')"><i class="fa fa-rss"></i></button> 
     <button id="leftbar_consoles" class="btn btn-link" title="Consoles list" onclick="javascript:LeftBar.select('consoles')"><i class="zerynth zerynth-terminal2"></i></button>
     <button id="leftbar_things" class="btn btn-link" title="Connected Devices" onclick="javascript:LeftBar.select('things')"><i class="zerynth zerynth-Zerynth-ADM"></i></button> 
+    <button id="leftbar_cvm" class="btn btn-link" title="Custom Virtual Machines" onclick="javascript:LeftBar.select('cvm')"><i class="fa fa-wrench"></i></button> 
 </div>
 <script>
 
@@ -51,6 +52,10 @@ var LeftBar = {
         $("#things_view").show()
         ThingsView.redraw()
         //Bus.dispatch("consoles_change")
+    },
+    cvm: function(){
+        $("#cvm_view").show()
+        CVMView.redraw()
     }
 }
 

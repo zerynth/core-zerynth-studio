@@ -121,6 +121,7 @@ var App = {
             submenu.append(new nw.MenuItem({label:"Info",click:App.device_info}))
             submenu.append(new nw.MenuItem({label:"Pinmap",click:App.device_pinmap}))
             submenu.append(new nw.MenuItem({label:"Console",click:App.open_console}))
+            // submenu.append(new nw.MenuItem({label:"Debug",click:App.start_debug}))
             menu.append(new nw.MenuItem({label:"Device",submenu:submenu}))
 
             submenu = new nw.Menu()
@@ -138,6 +139,7 @@ var App = {
             App.uninst_submenu = subsubmenu
             submenu.append(new nw.MenuItem({label:"Remove installation",submenu:subsubmenu}))
             submenu.append(new nw.MenuItem({label:"Clean temp folder",click:()=>{App.clean()}}))
+            submenu.append(new nw.MenuItem({label:"Forget all devices",click:()=>{App.clean_db()}}))
             submenu.append(new nw.MenuItem({label:"Show messages",click:()=>{Dialogs.modal("MessagesModal",Footer.messages)}}))
             submenu.append(new nw.MenuItem({label:"Check Updates",click:()=>{App._update_checker()}}))
             menu.append(new nw.MenuItem({label:"Preferences",submenu:submenu}))
@@ -183,7 +185,13 @@ var App = {
                 Bus.addEventListener("login_ok",App.on_login)
                 Bus.addEventListener("profile_changed",App.on_profile)
 
+                //disable autocomplete
+                $( document ).on( 'focus', ':input', function(){
+                        $( this ).attr( 'autocomplete', 'off' );
+                });                
                 $('.selectpicker').selectpicker(); //move in project_view
+                $("#device_picker").selectpicker('show')
+                $("#device_manual_picker").selectpicker('hide')
                 $('[data-toggle="tooltip"]').tooltip()
                 ZApi.init(ZConf,null,null,null)
                 if (ZConf.testmode) mwin.showDevTools();
@@ -793,7 +801,12 @@ var App = {
             cw.win.focus()
         } else {
             //new window!
-            Z.fs.writeFileSync(consolejs,'var console_alias="'+(cid)+'";var console_title="'+dev.name+'@'+dev.port+'";var console_baud=115200;var console_parity=0;var console_stop=0;')
+            if (dev.manual) {
+                Z.fs.writeFileSync(consolejs,'var console_alias=false;var console_title="'+dev.name+'@'+dev.port+'";var console_baud=115200;var console_parity=0;var console_stop=0;var console_port="'+dev.port+'";')
+                
+            } else {
+                Z.fs.writeFileSync(consolejs,'var console_alias="'+(cid)+'";var console_title="'+dev.name+'@'+dev.port+'";var console_baud=115200;var console_parity=0;var console_stop=0;')
+            }
             nw.Window.open("console.html",{
                 inject_js_start:consolejs,
                 new_instance:false
@@ -1051,6 +1064,10 @@ var App = {
                 $("#consoleButton").prop("disabled",true)
                 dmenu[3].enabled=false
             }
+            // if (!dev.probe){
+            //     $("#debugButton").prop("disabled",true)
+            //     dmenu[4].enabled=false
+            // }
             if(dev.optkey.startsWith("virt:")){
                 $("#virtualizeButton").prop("disabled",true)
                 $("#consoleButton").prop("disabled",true)
@@ -1151,6 +1168,30 @@ var App = {
         }
 
     },
+    clean_db: function(){
+        var confirm = bootbox.confirm({
+            title: "Forget all devices",
+            message: "Do you want to forget all your devices?<br>Note: This is related only to devices not virtual machines.",
+            buttons: {
+                cancel: {
+                    label: '<i class="fa fa-times"></i> Cancel'
+                },
+                confirm: {
+                    label: '<i class="fa fa-check"></i> Confirm'
+                }
+            },
+            callback: function (result) {
+                if (result===null){
+                    d.modal("hide")
+                } else {
+                    ZTC.command(["clean","--db"]).then(()=>{
+                        ZDevices.disambiguate()
+                    })
+                    .catch((err)=>{console.log("Error on forgetting devices:"+err)})
+                        }
+                }
+        });
+    },
     update_uninst_menu: function(){
         var ml = App.uninst_submenu.items.length
         var i
@@ -1191,7 +1232,31 @@ var App = {
         else{
             App.editors.code.setKeyboardHandler("ace/keyboard/textinput");
         }
+    },
+    start_debug: function(){
+        if (!ZDevices.selected) return
+        if (Store.debugging) {
+            Store.open_window("http://127.0.0.1:5000/")
+            return
+        }
+        ZTC.command(["debugger","start",ZDevices.selected.target],{background:true})
+            .then(()=>{
+                console.log("Debugger started")
+                Store.debugging=true
+                Store.open_window("http://127.0.0.1:5000/",{close_callback: ()=>{
+                    console.log("CLOSING!")
+                    ZTC.command(["debugger","stop"])
+                    Store.debugging=false
+                }})
+            })
+            .catch((err)=>{
+                console.log(err)
+            })
+    },
+    stop_debug: function(){
+    
     }
+
 
 }
 

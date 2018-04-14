@@ -90,7 +90,8 @@ var CreateVMModal = {
     $("#createvm_modal").modal("hide")
   },
   run_create: function(vm,dev){
-    ZTC.vmcreate(vm,dev)
+    var fn = (dev.manual) ? (ZTC.vmcreate_by_uid):(ZTC.vmcreate)
+    fn(vm,dev)
       .then(()=>{
         CreateVMModal.__hide()
         Z.log("VM created! You can now virtualize your "+dev.target)
@@ -117,6 +118,9 @@ var CreateVMModal = {
     var sel = $('#createvm_modal input[name="vms"]:checked').val()
     var vm = CreateVMModal.vms[sel]
     var dev = CreateVMModal.dev
+    console.log(dev)
+    console.log(sel)
+    console.log(vm)
     Z.log("Creating VM for "+dev.target+"...")
     if (!dev.chipid){
         ZTC.command(["device","register",dev.alias])

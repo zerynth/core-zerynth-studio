@@ -5,9 +5,6 @@ var AboutModal = {
     ZTC.command(["info","--fullversion"],{
       stdout:(line)=>{
         $("#about_version").html(line)
-        if (Store.profile && Store.profile.subscription!="free") {
-            $("#about_image").attr("src","img/Logo512pro.png")
-        }
       }
     })
     $('a[target=_blank]').on('click', function(){

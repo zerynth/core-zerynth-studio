@@ -21,7 +21,7 @@ var VirtualizeModal = {
         patch:v.patch,
         rtos: ZConf.rtoses[v.rtos],
         features: _.map(v.features,(vv,kk,ll)=>{ return ZConf.features[vv]}).join(", ") || "---",
-        devname: _.find(ZDevices.targets,(item)=>{ return item.target==v.target }).name
+        devname: v.name //_.find(ZDevices.targets,(item)=>{ return item.target==v.target }).name
       }
     })
     if (data[0].chipid){
@@ -56,7 +56,25 @@ var VirtualizeModal = {
 
       Store.action("virtualizing",true)
       ZNotify.wait()
-      ZTC.command(["device","virtualize",dev.alias, selected])
+      var cmds
+      if (dev.manual) {
+          cmds = ["device","virtualize_raw",selected]
+          if (dev.probe) {
+            cmds.push("--spec")
+            cmds.push("probe:"+dev.probe)
+          }
+          if (dev.port) {
+            cmds.push("--spec")
+            cmds.push("port:"+dev.port)
+          }
+          if (dev.disk) {
+            cmds.push("--spec")
+            cmds.push("disk:"+dev.disk)
+          }
+      } else {
+          cmds = ["device","virtualize",dev.alias, selected] 
+      }
+      ZTC.command(cmds)
       .then(()=>{
         Store.action("virtualizing",false)
         $("#virtualize_modal").modal("hide")

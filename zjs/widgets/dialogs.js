@@ -2,6 +2,22 @@
 
 var Dialogs = {
 
+    open_file: function(filter){
+        return new Promise(function(resolve,reject){
+            var chooser = $("#open_file_hidden_input");
+            if (filter) chooser.attr("accept",filter)
+            else chooser.removeAttr("accept")
+            chooser.unbind('change');
+            chooser.change(function(evt) {
+                console.log($(this).val());
+                // Reset the selected value to empty ('')
+                var val = $(this).val()
+                $(this).val('');
+                resolve(val)
+            });
+            chooser.trigger('click');  
+        })
+    },
     open_dir: function(default_dir){
         return new Promise(function(resolve,reject){
             var chooser = $("#open_dir_hidden_input");

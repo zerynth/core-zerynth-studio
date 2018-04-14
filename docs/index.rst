@@ -82,6 +82,58 @@ When a serial console is opened, the port parameters are automatically configure
 
 The :ref:`Getting Started <gettingstarted>` section has a dedicated tutorial on how to manage devices.
 
+Advanced Device Widget
+----------------------
+
+Zerynth Studio gives the possibility to configure the connected devices in more details, overriding the automatic discovery process. 
+This feature is particularly useful when the device needs to be registered, virtualized and programmed using a JTAG/SWD probe. To access the advanced device management mode the corresponding option must be selected in the device management widget. 
+
+.. figure:: /custom/img/zerynth_advdm1.png
+   :align: center
+   :figwidth: 50%
+   :alt: Zerynth Studio Advanced Device Management
+
+.. figure:: /custom/img/zerynth_advdm2.png
+   :align: center
+   :figwidth: 50%
+   :alt: Zerynth Studio Advanced Device Management
+
+
+
+
+Once in advanced mode, new device configurations can be created and filled with the following details:
+
+* port: the serial port exposed by the device (a list of available serial ports is automatically suggested)
+* disk: some devices are seen as mass storage disks (a list of available disks is automatically suggested)
+* probe: most used JTAG/SWD probes are supported and can be selected
+
+.. figure:: /custom/img/zerynth_advdm3.png
+   :align: center
+   :figwidth: 90%
+   :alt: Zerynth Studio Advanced Device Management
+
+.. figure:: /custom/img/zerynth_advdm4.png
+   :align: center
+   :figwidth: 90%
+   :alt: Zerynth Studio Advanced Device Management
+
+.. figure:: /custom/img/zerynth_advdm5.png
+   :align: center
+   :figwidth: 90%
+   :alt: Zerynth Studio Advanced Device Management
+
+
+In advanced mode, the behaviour of the "Z" button, console button and uplink button are modified:
+
+* the console is available only if a port has been specified in the device configuration
+* the "Z" button functions will be perfomed using the specified port or disk; if a probe is specified, it will take priority and all registrations and virtualizations will be performed via JTAG/SWD (for the devices supporting the feature)
+* the uplink button will use the configured port; again, if a probe is specified, it will take priority and the uplinking will be performed via JTAG/SWD
+
+Device configurations  and the device management mode are remembered across Studio restarts (but not across different development machines). Device configurations can be deleted and modified. Some systems assign different devices parameters upon device reconnection (i.e. a different serial port): such changes are not automatically recognized in advanced mode and must be reconfigured manually!
+
+
+
+
 .. _zerynth-studio-profile:
 
 Zerynth Account Profile Section
@@ -319,6 +371,42 @@ Devices present in the ADM database are shown in this panel. For each device, in
    :alt: Zerynth Studio ADM panel
 
 
+.. _zstudio-custom_vms:
+
+Custom Virtual Machines
+-----------------------
+
+Custom Virtual Machines can be created and managed directly from Zerynth Studio. A new custom VM can be created by accessing the dropdown menu on the right side of the panel title. In particular a new VM can be created:
+
+1. from scratch (Add VM option)
+2. by importing VM packages created by other users (import from file option)
+3. by importing the custom VM from a Github repository (import from Github)
+
+.. figure:: /custom/img/zerynth_cvm1.png
+   :align: center
+   :figwidth: 90%
+   :alt: Zerynth Custom VM panel and controls
+
+By selecting option 1 a popup dialog is displayed asking for some info:
+
+* the name of the custom VM (must be at most 31 lowercase characters with at most one underscore)
+* the name of the custom device hosting the custom VM (it will appear on the Device Management Widget)
+* the customizable VM to use as a starting point
+
+.. figure:: /custom/img/zerynth_cvm2.png
+   :align: center
+   :figwidth: 90%
+   :alt: Zerynth Custom VM creation
+
+Once created, the custom VM will appear in the panel with a series of buttons (in order from left to right):
+
+* edit button: open the Yaml template file where the VM customization takes place. The standard template is heavily commented and contains all the info to successfully configure a custom VM
+* compile button: before being able to use a custom VM, it must be compiled starting from the info contained in the Yaml template.
+* remove button: permanently deletes the custom VM. Not that custom VMs are not saved to the Zerynth servers, so be careful!
+* export button: creates a package containing the custom VM details. Such package can be shared with other Zerynth users enabling them to use the custom VM.
+* Github button: pushes the custom VM to a Github repository
+
+
 
 .. _zstudio-system_log:
 
@@ -355,3 +443,25 @@ Finally, by typing :samp:`:ztc` followed by a ZTC command, the specified command
    :align: center
    :figwidth: 90%
    :alt: Zerynth Studio Quick Search
+
+.. _zstudio-preferences:
+
+Preferences Menu
+================
+
+.. figure:: /custom/img/preferences_menu.png
+   :align: center
+   :figwidth: 90%
+   :alt: Zerynth Studio Preferences Menu
+
+
+In the Zerynth Studio Preferences Menu, following options are available:
+
+* **Profile**: Opens the Profile Section;
+* **Remove Installation**: Lists of old installation instances that can be removed;
+* **Clean temp folder**: Deletes all file in tmp folder under Zerynth Studio folder;
+* **Forget all devices**: Forgets all devices stored in local database (virtual machines are not involved);
+* **Show messages**: Shows the list of all received messages;
+* **Check Updates**: Manual trigger to check if new updates are available.
+
+.. note:: the "Forget all devices" option is needed when there are one or more errors in recognizing devices connected to the machine. Confirming this command local device database will be cleaned.

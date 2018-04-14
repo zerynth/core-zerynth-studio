@@ -4,29 +4,46 @@ var DevicePinmapModal = {
   dev: null,
   __fill: function(data){
     DevicePinmapModal.dev = data
-    var svgpath = "file://"+Z.path.join(data.path,"svg", data.target+".svg").replace(/ /g, '%20')
-    $('#pinmapselector input:radio[name="options"]').change(function(){
-            if (this.value==0){
-              $("#pin_x5F_comm").hide()
-              $("#pin_x5F_io").show()
-            } else {
-              $("#pin_x5F_comm").show()
-              $("#pin_x5F_io").hide()
-            }
-        })
-    $("#pinmapSvg").load(svgpath, function() {
-        $('#devicepinmap_modal').on('shown.bs.modal', function(e) {
-            $("#pinmapSvg > svg").height("100%");
-            $("#pinmapSvg > svg").width("100%");
-            $("#pinmapSvg").height($("body").height()-200);
-            svgPanZoom('#pinmapSvg > svg', {
-                viewportSelector: "#pinmapSvg",
-                    fit: true
-                })
-            $('#pinoptbtn2').click()
-            $('#pinoptbtn1').click()
-        })
-    })
+    var zoomsvg = null
+    if(!data.customized && !data.customizable){
+      var svgpath = "file://"+Z.path.join(data.path,"svg", data.target+".svg").replace(/ /g, '%20')
+      $('#pinmapselector input:radio[name="options"]').change(function(){
+              if (this.value==0){
+                $("#pin_x5F_comm").hide()
+                $("#pin_x5F_io").show()
+              } else {
+                $("#pin_x5F_comm").show()
+                $("#pin_x5F_io").hide()
+              }
+          })
+      $("#pinmapSvg").load(svgpath, function() {
+          $('#devicepinmap_modal').on('shown.bs.modal', function(e) {
+              $("#pinmapSvg > svg").height("100%");
+              $("#pinmapSvg > svg").width("100%");
+              $("#pinmapSvg").height($("body").height()-200);
+              if (!zoomsvg){
+                zoomsvg = svgPanZoom('#pinmapSvg > svg', {
+                  viewportSelector: "#pinmapSvg",
+                      fit: true
+                  })
+              }
+              $("#pinmapSvg").attr('title','drag and zoom with the mousewheel');
+              $('#pinoptbtn2').click()
+              $('#pinoptbtn1').click()
+          })
+      })
+    }
+    else{
+      $("#pinmapSvg").html("<center><br><br>No Pinmap for this device</center>");
+      $("#pinmapSvg").width("100%");
+      $("#pinmapSvg").height($("body").height()-200);
+      if(zoomsvg){
+        zoomsvg.destroy();
+        zoomsvg = null;
+      }
+      DevicePinmapModal.dev = null
+      $("#pinmapSvg").attr('title','no image');
+    }
   },
   __show: function(){
     $("#devicepinmap_modal").modal()

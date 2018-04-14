@@ -123,15 +123,46 @@ var ZButtonModal = {
     $("#zbutton_modal").modal("hide")
   },
   register: function(){
+    var dev = ZButtonModal.dev
     ZNotify.wait("Registering device...")
     ZButtonModal.__hide()
     Store.action("virtualizing",true)
     ZNotify.alert("Registering, please wait...","Registering device","info",true)
-    ZTC.command(["device","register",ZButtonModal.dev.alias],{
+    var cmds = ["device"]
+
+    if (dev.manual) {
+        console.log(dev)
+        cmds.push("register_raw")
+        cmds.push(dev.target)
+        if (dev.probe) {
+            cmds.push("--spec")
+            cmds.push("probe:"+dev.probe)
+        } else {
+            if (dev.port) {
+                cmds.push("--spec")
+                cmds.push("port:"+dev.port)
+            }
+            if (dev.disk) {
+                cmds.push("--spec")
+                cmds.push("disk:"+dev.disk)
+            }
+        }
+    } else {
+        cmds.push("register")
+        cmds.push(dev.alias)
+    }
+
+    var retrieved_chipid=null
+    var retrieved_remoteid=null
+    ZTC.command(cmds,{
       stdout: (line)=>{
           Z.log(line)
               if (line.includes("reset the device")){
                   ZNotify.alert_timeout("Please Reset the Device!","Device Reset needed","info",5000)
+              } else if(line.includes("Chip id retrieved:")){
+                  retrieved_chipid=line.substring(line.indexOf(":")+1).replace(/^\n|\n$/g, '').trim()
+              } else if(line.includes("registered with uid:")){
+                  retrieved_remoteid=line.substring(line.indexOf(":")+1).replace(/^\n|\n$/g, '').trim()
               }
           }
       })
@@ -139,8 +170,17 @@ var ZButtonModal = {
             Store.action("virtualizing",false)
             ZNotify.unalert()
             ZNotify.done()
-            Z.log("Registration successful! Now you can virtualize your "+ZButtonModal.dev.target)
-            ZDevices.disambiguate()
+            Z.log("Registration successful! Now you can virtualize your "+dev.target)
+            if(!dev.manual) {
+                ZDevices.disambiguate()
+            } else if(retrieved_chipid){
+                //save chipid to device upon registration
+                ZTC.command(["device","db","put",dev.target,dev.name,"--spec","chipid:"+retrieved_chipid,"--spec","remote_id:"+retrieved_remoteid]).then(()=>{
+                    dev.remote_id = retrieved_remoteid
+                    dev.chipid = retrieved_chipid
+                    ZDevices.invalidate()
+                })
+            }
             //Dialogs.modal("VirtualizeModal",_.values(Store.vms[dev.target]))
         })
         .catch((err)=>{
@@ -150,7 +190,7 @@ var ZButtonModal = {
         })
   },
   createvm: function(){
-    var target = ZButtonModal.dev.target
+    var target = ZButtonModal.dev.original_target || ZButtonModal.dev.target
     ZTC.vmlist(target)
         .then((vms)=>{
             ZTC.vmlistcreated(ZButtonModal.dev.remote_id)
@@ -185,6 +225,7 @@ var ZButtonModal = {
     }
     else {
       ZButtonModal.__hide()
+    console.log(Store.vms)
       Dialogs.modal("VirtualizeModal",Store.vms[target][chipid])
     }
   }

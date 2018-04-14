@@ -7,7 +7,7 @@ var DeviceAddModal = {
         v.selected = _.find(data.vrt,(item)=>{return item.target==v.target})
         return v
       }),(item)=>{
-        return item.type=="board"
+        return (item.type=="board" && !item.customizable)
       })
     document.getElementById("tsearch").value="";
     DeviceAddModal.create_table(devs);    
@@ -45,7 +45,10 @@ var DeviceAddModal = {
     var input, filter, table, tr, i;
     input = document.getElementById("tsearch");
     filter = input.value.toUpperCase();
-    devices = _.values(ZDevices.targets);
+    devices = _.values(_.filter(ZDevices.targets,(item)=>{
+        return (!item.customizable)
+      })
+    );
     var searched = []
     for (i = 0; i < devices.length; i++) {
       model = devices[i].chip_manifacturer+" "+devices[i].chip_model.toUpperCase();

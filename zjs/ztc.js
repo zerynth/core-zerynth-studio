@@ -56,7 +56,8 @@ var ZTC = {
             var environ ={
                 ZERYNTH_TESTMODE: process.env.ZERYNTH_TESTMODE || 0,
                 LC_ALL: ZTC.locale,
-                LANG: ZTC.locale
+                LANG: ZTC.locale,
+                PATH: process.env.PATH || ""
             }
             console.log("[ztc]>"+cmdline+" "+(args.join(" ")))
             const cmd = spawn(cmdline,args,{detached:false,env:environ})
@@ -153,25 +154,85 @@ var ZTC = {
         })
 
     },
-    uplink_project:function(prj,dev){
+    inspect: function(target,probe){
         return new Promise((resolve,reject)=>{
-            ZTC.command(["uplink",dev.alias,Z.path.join(ZConf.tempdir,"zstudio.vbo")],{
-                stdout: (line)=>{
-                    Z.log(line)
-                    if (line.includes("reset the device")){
-                        ZNotify.alert_timeout("Please Reset the Device!","Device Reset needed","info",5000)
+            var inspection=null
+            ZTC.command(["probe","inspect",target,probe],{
+                stdout: (line) => {
+                    try {
+                        inspection=JSON.parse(line)
+                    } catch(err) {
+                        console.log(err)
                     }
                 }
-            }).then(()=>{
-                resolve()
-            }).catch((err)=>{
+            })
+            .then(()=>{
+                if(!inspection) reject("Can't inspect!")
+                else resolve(inspection)
+            })
+            .catch((err)=>{
                 reject(err)
             })
         })
     },
-    link:function(vmuid,bytecode,vmslot,bcslot,output){
+    uplink_project:function(prj,dev){
         return new Promise((resolve,reject)=>{
-            ZTC.command(["link",vmuid,bytecode,"--vm",vmslot,"--bc",bcslot,"--file",output],{
+            var infile = Z.path.join(ZConf.tempdir,"zstudio.vbo")
+            if (!dev.manual) {
+                ZTC.command(["uplink",dev.alias,infile],{
+                    stdout: (line)=>{
+                        Z.log(line)
+                        if (line.includes("reset the device")){
+                            ZNotify.alert_timeout("Please Reset the Device!","Device Reset needed","info",5000)
+                        }
+                    }
+                }).then(()=>{
+                    resolve()
+                }).catch((err)=>{
+                    reject(err)
+                })
+            } else {
+                //manual devices
+                if (dev.probe) {
+                    ZTC.inspect(dev.target,dev.probe)
+                        .then((inspection)=>{
+                            var outfile = Z.path.join(ZConf.tempdir,"zstudio.bin")
+                            ZTC.link(inspection.vmuid,infile,0,0,outfile,true)
+                                .then(()=>{
+                                    //now uplink by probe!
+                                    ZTC.command(["uplink_by_probe",dev.target,dev.probe,outfile])
+                                    .then(()=>{
+                                        resolve()
+                                    }).catch((err)=>{
+                                        reject(err)
+                                    })
+                                })
+                                .catch((err)=>{
+                                    reject(err)
+                                })
+                            
+                        })
+                        .catch((err)=>{
+                            reject(err)
+                        })
+                } else {
+                    //uplink raw
+                    ZTC.command(["uplink_raw",dev.target,infile,"--spec","port:"+dev.port])
+                    .then(()=>{
+                        resolve()
+                    }).catch((err)=>{
+                        reject(err)
+                    })
+                }
+            
+            }
+        })
+    },
+    link:function(vmuid,bytecode,vmslot,bcslot,output,binary){
+        return new Promise((resolve,reject)=>{
+            args =["link",vmuid,bytecode,"--vm",vmslot,"--bc",bcslot,"--file",output] 
+            if (binary) args.push("--bin")
+            ZTC.command(args,{
                 stdout: (line)=>{
                     Z.log(line)
                 }
@@ -326,6 +387,27 @@ var ZTC = {
         return new Promise((resolve,reject)=>{
             var cmd = ["vm","create",dev.alias,vm.version,vm.thevm.rtos,vm.patch]
             _.each(vm.thevm.features,(v,k,l)=>{cmd.push("--feat");cmd.push(v)})
+            if (dev.customized) {
+                cmd.push("--custom_target")
+                cmd.push(dev.target)
+            }
+            ZTC.command(cmd)
+                .then(()=>{
+                    resolve()
+                })
+                .catch((err)=>{
+                    reject(err)
+                })
+        })
+    },
+    vmcreate_by_uid: function(vm,dev){
+        return new Promise((resolve,reject)=>{
+            var cmd = ["vm","create_by_uid",dev.remote_id,vm.version,vm.thevm.rtos,vm.patch]
+            _.each(vm.thevm.features,(v,k,l)=>{cmd.push("--feat");cmd.push(v)})
+            if (dev.customized) {
+                cmd.push("--custom_target")
+                cmd.push(dev.target)
+            }
             ZTC.command(cmd)
                 .then(()=>{
                     resolve()
@@ -877,5 +959,111 @@ var ZTC = {
                 reject(err)
             })
         })
+    },
+    cvm_list: function(){
+        return new Promise((resolve,reject)=>{
+            var cmd = ["vm","custom","list"]
+            var res;
+            ZTC.command(cmd,{
+                stdout: (line)=>{
+                    console.log(line)
+                    try{
+                        res = JSON.parse(line)
+                    } catch(err){
+                        console.log(err) //ignore [info]
+                    }
+                }
+            })
+                .then(()=>{
+                    resolve(res)
+                })
+                .catch((err)=>{
+                    reject(err)
+                })
+        })
+    },
+    cvm_original: function(){
+        return new Promise((resolve,reject)=>{
+            var cmd = ["vm","custom","original"]
+            var res;
+            ZTC.command(cmd,{
+                stdout: (line)=>{
+                    console.log(line)
+                    try{
+                        res = JSON.parse(line)
+                    } catch(err){
+                        console.log(err) //ignore [info]
+                    }
+                }
+            })
+                .then(()=>{
+                    resolve(res)
+                })
+                .catch((err)=>{
+                    reject(err)
+                })
+        })
+    },
+    cvm_create: function(target,short_name,name) {
+        return new Promise((resolve,reject)=>{
+            var cmd = ["vm","custom","create",target,short_name,"--name",name]
+            ZTC.command(cmd)
+                .then(()=>{
+                    resolve()
+                })
+                .catch((err)=>{
+                    reject(err)
+                })
+        })
+    },
+    cvm_compile: function(short_name) {
+        return new Promise((resolve,reject)=>{
+            var cmd = ["vm","custom","compile",short_name]
+            ZTC.command(cmd)
+                .then(()=>{
+                    resolve()
+                })
+                .catch((err)=>{
+                    reject(err)
+                })
+        })
+    },
+    cvm_remove: function(short_name) {
+        return new Promise((resolve,reject)=>{
+            var cmd = ["vm","custom","remove",short_name]
+            ZTC.command(cmd)
+                .then(()=>{
+                    resolve()
+                })
+                .catch((err)=>{
+                    reject(err)
+                })
+        })
+    },
+    cvm_export: function(short_name,destination) {
+        return new Promise((resolve,reject)=>{
+            var cmd = ["vm","custom","export",short_name,destination]
+            ZTC.command(cmd)
+                .then(()=>{
+                    resolve()
+                })
+                .catch((err)=>{
+                    reject(err)
+                })
+        })
+    },
+    cvm_import: function(source) {
+        return new Promise((resolve,reject)=>{
+            var cmd = ["vm","custom","import",source]
+            ZTC.command(cmd)
+                .then(()=>{
+                    resolve()
+                })
+                .catch((err)=>{
+                    reject(err)
+                })
+        })
     }
+
+
 }

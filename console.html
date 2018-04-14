@@ -91,7 +91,13 @@ function toggle_scroll_lock(){
 }
 
 function open_console(baudrate,parity,stopbits){
-    ZTC.command(["device","open",console_alias],{
+    var args = []
+    if (typeof console_alias === "string"){
+        args = ["device","open",console_alias]
+    } else {
+        args = ["device","open_raw",console_port]
+    }
+    ZTC.command(args,{
         stderr: (line)=>{
             if (line.startsWith("[fatal]")){
                 Z.log("----------------")

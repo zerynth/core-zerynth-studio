@@ -77,56 +77,56 @@ var LibraryPubModal = {
     }
     
   },
-  location_uncheck: function(){
-    if (LibraryPubModal.pub_timeout) {
-        console.log("Clear timeout")
-        clearInterval(LibraryPubModal.pub_timeout);
-        LibraryPubModal.pub_timeout = null
-        LibraryPubModal.timeout_stop=true
-    }
-
-    if (LibraryPubModal.pub_window) {
-        console.log("Close window")
-        LibraryPubModal.pub_window.window.close()
-        LibraryPubModal.pub_window = null
-    }
-  },
-  location_checker: function(callback){
-    var pub_timeout = LibraryPubModal.pub_timeout
-    var pub_timeout_stop = LibraryPubModal.pub_timeout_stop
-    var pub_window = LibraryPubModal.pub_window
-    if (!pub_timeout && !pub_timeout_stop){
-        LibraryPubModal.pub_timeout = setInterval(function(){
-            console.log("CHECK LOCATION!")
-            console.log(pub_window.window.document.location.href)
-            if(pub_window && pub_window.window.document.location.href.startsWith(ZConf.redirect.github)){
-                //TODO: check content & save token
-                console.log("BEFORE CHECK!")
-                var cnt = pub_window.window.document.body.innerHTML.replace(/(<([^>]+)>)/ig,"") //<pre> tags can be there
-                console.log(cnt)
-                var ok = false
-                var emsg=""
-                try {
-                    var res = JSON.parse(cnt)
-                    console.log(res)
-                    if (res.data && res.data.access_token) {
-                        ok = res.data
-                        emsg="ok"
-                    } else {
-                        emsg="failed authentication!"
-                    }
-                } catch(err) {
-                    emsg="unknown error"+err
-                }
-                LibraryPubModal.location_uncheck()
-                if (callback) callback(ok,emsg)
-            }
-        },100)
-    }
-  },
-  pub_window: null,
-  pub_timeout: null,
-  pub_timeout_stop: null,
+//  location_uncheck: function(){
+//    if (LibraryPubModal.pub_timeout) {
+//        console.log("Clear timeout")
+//        clearInterval(LibraryPubModal.pub_timeout);
+//        LibraryPubModal.pub_timeout = null
+//        LibraryPubModal.timeout_stop=true
+//    }
+//
+//    if (LibraryPubModal.pub_window) {
+//        console.log("Close window")
+//        LibraryPubModal.pub_window.window.close()
+//        LibraryPubModal.pub_window = null
+//    }
+//  },
+//  location_checker: function(callback){
+//    var pub_timeout = LibraryPubModal.pub_timeout
+//    var pub_timeout_stop = LibraryPubModal.pub_timeout_stop
+//    var pub_window = LibraryPubModal.pub_window
+//    if (!pub_timeout && !pub_timeout_stop){
+//        LibraryPubModal.pub_timeout = setInterval(function(){
+//            console.log("CHECK LOCATION!")
+//            console.log(pub_window.window.document.location.href)
+//            if(pub_window && pub_window.window.document.location.href.startsWith(ZConf.redirect.github)){
+//                //TODO: check content & save token
+//                console.log("BEFORE CHECK!")
+//                var cnt = pub_window.window.document.body.innerHTML.replace(/(<([^>]+)>)/ig,"") //<pre> tags can be there
+//                console.log(cnt)
+//                var ok = false
+//                var emsg=""
+//                try {
+//                    var res = JSON.parse(cnt)
+//                    console.log(res)
+//                    if (res.data && res.data.access_token) {
+//                        ok = res.data
+//                        emsg="ok"
+//                    } else {
+//                        emsg="failed authentication!"
+//                    }
+//                } catch(err) {
+//                    emsg="unknown error"+err
+//                }
+//                LibraryPubModal.location_uncheck()
+//                if (callback) callback(ok,emsg)
+//            }
+//        },100)
+//    }
+//  },
+//  pub_window: null,
+//  pub_timeout: null,
+//  pub_timeout_stop: null,
   pub_crd: null,
   github_flow: function(){
         
@@ -141,32 +141,33 @@ var LibraryPubModal = {
         }
     }
     
-    if (!LibraryPubModal.pub_window) {
-        var x0,y0,x1,y1,x,y;
-        x0 = nw.Window.get().x;
-        y0 = nw.Window.get().y;
-        x1 = x0 + nw.Window.get().width;
-        y1 = y0 + nw.Window.get().height;
-        x = Math.round((x1+x0)/2 - 400)
-        y = Math.round((y1+y0)/2 - 300)
-        if(x<x0) x=x0
-        if(y<y0) y=y0
-
-        nw.Window.open(ZConf.oauth.github+Store.profile.github.challenge,{
-            title:"Github Auth",
-            frame:true,
-            width:800,
-            height:600,
-            x:x,
-            y:y},function(win){
-            win.on("closed", function(){
-                LibraryPubModal.pub_window=null
-                LibraryPubModa.location_uncheck()
-            })
-            LibraryPubModal.pub_window = win
-            //login_timeout_stop=false
-            LibraryPubModal.location_checker(callback)
-        })
+    if (!ZConf.pub_window) {
+        ZConf.github_flow(callback)
+//        var x0,y0,x1,y1,x,y;
+//        x0 = nw.Window.get().x;
+//        y0 = nw.Window.get().y;
+//        x1 = x0 + nw.Window.get().width;
+//        y1 = y0 + nw.Window.get().height;
+//        x = Math.round((x1+x0)/2 - 400)
+//        y = Math.round((y1+y0)/2 - 300)
+//        if(x<x0) x=x0
+//        if(y<y0) y=y0
+//
+//        nw.Window.open(ZConf.oauth.github+Store.profile.github.challenge,{
+//            title:"Github Auth",
+//            frame:true,
+//            width:800,
+//            height:600,
+//            x:x,
+//            y:y},function(win){
+//            win.on("closed", function(){
+//                LibraryPubModal.pub_window=null
+//                LibraryPubModal.location_uncheck()
+//            })
+//            LibraryPubModal.pub_window = win
+//            //login_timeout_stop=false
+//            LibraryPubModal.location_checker(callback)
+//        })
     }
     },
     github_repo_choose: function(){

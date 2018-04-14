@@ -27,7 +27,8 @@ var Store = {
             ".h":"c_cpp",
             ".txt":"text",
             ".md":"markdown",
-            ".rst":"rst"
+            ".rst":"rst",
+            ".yml":"yaml"
         }
     },
     consoles: {
@@ -167,10 +168,10 @@ var Store = {
 
     },  
     watch_project: function(prj){
-        prj.set_watcher((p,f)=>{Bus.dispatch("project_change")})
+        if (prj) prj.set_watcher((p,f)=>{Bus.dispatch("project_change")})
     },
     unwatch_project: function(prj){
-        prj.unset_watcher()
+        if (prj) prj.unset_watcher()
     },
     add_project: function(prj,make_current){
         var x = _.find(Store.projects.items,(p)=>{return p.path==prj.path})
@@ -326,9 +327,11 @@ var Store = {
         var cw = Store.windows[url]
         if (!cw) {
             console.log("Opening",url)
-            nw.Window.open(url,{
+            var gg = nw.Window.open(url,{
                 new_instance:false
             },(cwin)=>{
+                console.log(gg)
+                console.log(cwin)
                 cwin.on("loaded",()=>{
                     Store.windows[cid]={
                         win:cwin,
@@ -337,6 +340,10 @@ var Store = {
                 })
                 cwin.on("closed",()=>{
                     console.log("CLOSED!")
+                    var cbk = (options) ? options.close_callback:null
+                    if (cbk) {
+                        cbk()
+                    }
                     delete Store.windows[cid]
                 })
             })

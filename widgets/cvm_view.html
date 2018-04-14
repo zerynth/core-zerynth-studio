@@ -1,0 +1,199 @@
+
+<script>
+var CVMView = {
+    vms: [],
+    init: function(){
+    },
+    redraw: function(){
+        $("#cvm_container").html('<div style="text-align:center;padding:8px"><span class="fa fa-spinner fa-spin"></span></div>')
+        ZTC.cvm_list()
+          .then((list)=>{
+              CVMView.vms=list
+              if (list.length<=0) {
+                 $("#cvm_container").html('<div style="text-align:center;padding:8px">There are no custom virtual machines, <a href="javascript:CVMView.add_vm()">add one!</a></div>')
+              } else {
+                  CVMView.render()
+              }
+          })
+          .catch((err)=>{
+            console.log("ERROR")
+            $("#cvm_container").html('<div style="text-align:center;padding:8px">Can\'t retrieve vm list!</div>')
+            console.log(err)
+          })
+      
+    },
+    render: function(){
+      var vms = _.sortBy(CVMView.vms,"target")
+      $("#cvm_container").html("<div style=\"text-align:center;padding:8px\"><a href=\"javascript:CVMView.add_vm()\">Add custom virtual machine</a></div>"+$.templates("#cvm_card").render(vms))
+    },
+    add_vm: function(){
+      Dialogs.modal("CVMAddModal",{})      
+    },
+    edit: function(target){
+        Store.add_document(null,Z.path.join(ZConf.cvmdir,target,target+".yml"),true,0)
+    },
+    remove: function(target){
+        bootbox.confirm("Are you sure you want to delete this VM?", function(result){ 
+            ZTC.cvm_remove(target)
+                .then(()=>{
+                    CVMView.redraw()
+                    ZDevices.disambiguate()
+                })    
+        });
+    },
+    compile: function(target){
+        Store.save_docs().
+            then(()=>{
+                ZTC.cvm_compile(target)
+                    .then(()=>{
+                        CVMView.redraw()
+                        ZDevices.disambiguate() //trigger device discovery
+                    })
+            })
+    },
+    export_file: function(target){
+        Dialogs.open_dir("~")
+            .then((outdir)=>{
+                ZTC.cvm_export(target,outdir)
+            })
+    },
+    import_file: function(){
+        Dialogs.open_file(".tar.xz")
+            .then((source)=>{
+                ZTC.cvm_import(source)
+                    .then(()=>{
+                        CVMView.redraw()
+                    })
+            })
+    },
+    import_github: function(){
+        bootbox.prompt("Enter the Github url", function(source){ 
+            ZTC.cvm_import(source)
+                .then(()=>{
+                    CVMView.redraw()
+                    ZDevices.disambiguate() //trigger device discovery
+                })
+        })
+    },
+    export_github: function(target){
+       
+        var callback = function(res,msg) {
+            if(!res){
+                Z.log("Error while retrieving Github credentials! "+msg)
+            } else {
+                ZTC.command(["package","authorize","--token",res.access_token,"--user",res.user])
+                    .then(()=>{
+                        Z.log("Retrieving Github repos...")
+                        var nfo
+                        ZTC.command(["package","github"],{
+                            stdout: (line)=>{
+                                try{
+                                    nfo=JSON.parse(line)
+                                } catch (err){
+                                    console.log(err)
+                                }
+                            }
+                        })
+                            .then(()=>{
+                                //select a repo to push to
+                                var options = _.map(nfo.repos,(v,k,l)=>{
+                                    return {
+                                        text: v.name,
+                                        value: v.url
+                                    }
+                                })
+                                bootbox.prompt({
+                                    title:"Select a repository to push to",
+                                    inputType: "select",
+                                    inputOptions: options,
+                                    callback: function(result){
+                                        if (!result) return;
+                                        Z.log("Pushing Custom VM to "+result)
+                                        ZTC.cvm_export(target,result)
+                                            .then(()=>{
+                                                Z.log("Done!")
+                                            })
+                                            .catch((err)=>{
+                                                Z.log("Something wrong while pushing: "+err)
+                                            })
+                                    }
+                                })
+                            })
+                            .catch((err)=>{
+                                Z.log("Can't retrieve your Github repositories! "+err)
+                            })
+        
+
+                    })
+                    .catch((err)=>{console.log(err); callback(false,"Can't save credentials to storage!")})
+            }
+        }
+    
+        if (!ZConf.pub_window) {
+            ZConf.github_flow(callback)
+        }
+    }
+}
+
+</script>
+
+<script id="cvm_card" type="text/x-jsrender">
+  <div class="list-group-item list-view-pf-stacked list-view-pf-top-align" id="cvm_{{:target}}">
+  <div class="list-group-item-header">
+    <div class="list-view-pf-main-info">
+      <div class="list-view-pf-body">
+        <div class="list-view-pf-description">
+          <div class="list-group-item-heading zpm_pack_title">
+            {{:name}}
+          </div>
+          <div class="list-group-item-text">
+            <div class=" zpm_pack_fullname">TARGET:&nbsp;&nbsp;&nbsp;{{:target}}</div>
+            <div class="thing_info">
+                <div class=" zpm_pack_fullname">ORIGINAL:&nbsp;{{:original_target}}</div>
+                <div class=" zpm_pack_fullname">CHIP:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{:chip}}</div>
+            </div>
+          </div>
+            <div class=" zpm_pack_fullname things_template">
+              <div class="btn-group">
+                <button type="button" class="btn btn-default" title="Edit" onclick="CVMView.edit('{{:target}}')"><span class="fa fa-edit fa-fw"></span></button>
+                <button type="button" class="btn btn-default" title="Compile" onclick="CVMView.compile('{{:target}}')"><span class="fa fa-play fa-fw"></span></button>
+                <button type="button" class="btn btn-default" title="Remove" onclick="CVMView.remove('{{:target}}')"><span class="fa fa-remove fa-fw"></span></button>
+                {{if active}}
+                <button type="button" class="btn btn-default" title="Export to File" onclick="CVMView.export_file('{{:target}}')"><span class="fa fa-download fa-fw"></span></button>
+                <button type="button" class="btn btn-default" title="Export to Github" onclick="CVMView.export_github('{{:target}}')"><span class="fa fa-github fa-fw"></span></button>
+                {{/if}}
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+</script>
+<!-- template -->
+<div class="zleftbarview" id="cvm_view">
+    <div class="zleftheader">
+      <div class="zleftheadertitle">Custom Virtual Machines</div>
+      <div class="dropdown  dropdown-kebab-pf">
+        <button class="btn btn-link dropdown-toggle" type="button" id="dropdownPrjKebab" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span class="fa fa-fw fa-ellipsis-v"></span>
+        </button>
+        <ul class="dropdown-menu " aria-labelledby="dropdownKebab">
+          <li><a href="javascript:CVMView.add_vm()">Add VM</a></li>
+          <li><a href="javascript:CVMView.import_file()">Import VM (from file)</a></li>
+          <li><a href="javascript:CVMView.import_github()">Import VM (from Github)</a></li>
+        </ul>
+      </div>
+    </div>
+  <div class="zleftcontainer" id="cvm_holder">
+    <div class="zleftpanelheader" id="cvm_header"></div>
+    <div class="zleftpanel" >
+      <div class="list-group list-view-pf"  id="cvm_container">
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+CVMView.init()
+</script>
+

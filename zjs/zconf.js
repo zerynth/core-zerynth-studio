@@ -5,6 +5,7 @@ var path = require('path');
 var ZConf = {
     //TODO: fix absolute path
     conf_file: Z.zdir("cfg"),
+    cvmdir: Z.zdir("cvm"),
     index_file: Z.zdir("index.json"),
     tempdir:Z.zdir("tmp"),
     sysdir:Z.zdir("sys"),
@@ -20,7 +21,8 @@ var ZConf = {
             recent_projects: []
         },
         editor_theme: "blackboard",
-        editor_font_size:12
+        editor_font_size:12,
+        device_mode:"auto"
     },
     init: function(){
         if (process.env.ZERYNTH_TESTMODE == 1) {
@@ -158,7 +160,84 @@ var ZConf = {
             console.log("Error loading token.json "+err)
             return null
         }
-    }
+    },
+    github_flow: function(ok_cb, close_cb){
+        var x0,y0,x1,y1,x,y;
+        x0 = nw.Window.get().x;
+        y0 = nw.Window.get().y;
+        x1 = x0 + nw.Window.get().width;
+        y1 = y0 + nw.Window.get().height;
+        x = Math.round((x1+x0)/2 - 400)
+        y = Math.round((y1+y0)/2 - 300)
+        if(x<x0) x=x0
+        if(y<y0) y=y0
+
+        nw.Window.open(ZConf.oauth.github+Store.profile.github.challenge,{
+            title:"Github Auth",
+            frame:true,
+            width:800,
+            height:600,
+            x:x,
+            y:y},function(win){
+            win.on("closed", function(){
+                ZConf.pub_window=null
+                ZConf.github_unchecker()
+            })
+            ZConf.pub_window = win
+            //login_timeout_stop=false
+            ZConf.github_checker(ok_cb)
+        })
+    },
+    pub_timeout: null,
+    pub_timeout_stop: null,
+    pub_window: null,
+    github_checker: function(callback){
+        var pub_timeout = ZConf.pub_timeout
+        var pub_timeout_stop = ZConf.pub_timeout_stop
+        var pub_window = ZConf.pub_window
+        if (!pub_timeout && !pub_timeout_stop){
+            ZConf.pub_timeout = setInterval(function(){
+                console.log("CHECK LOCATION!")
+                if(pub_window && pub_window.window.document.location.href.startsWith(ZConf.redirect.github)){
+                    //TODO: check content & save token
+                    console.log("BEFORE CHECK!")
+                    var cnt = pub_window.window.document.body.innerHTML.replace(/(<([^>]+)>)/ig,"") //<pre> tags can be there
+                    console.log(cnt)
+                    var ok = false
+                    var emsg=""
+                    try {
+                        var res = JSON.parse(cnt)
+                        console.log(res)
+                        if (res.data && res.data.access_token) {
+                            ok = res.data
+                            emsg="ok"
+                        } else {
+                            emsg="failed authentication!"
+                        }
+                    } catch(err) {
+                        emsg="unknown error"+err
+                    }
+                    ZConf.github_unchecker()
+                    if (callback) callback(ok,emsg)
+                }
+            },100)
+        }
+    },
+    github_unchecker: function(){
+        if (ZConf.pub_timeout) {
+            console.log("Clear timeout")
+            clearInterval(ZConf.pub_timeout);
+            ZConf.pub_timeout = null
+            ZConf.timeout_stop=true
+        }
+
+        if (ZConf.pub_window) {
+            console.log("Close window")
+            ZConf.pub_window.window.close()
+            ZConf.pub_window = null
+        }
+    },
+
 };
 
 
