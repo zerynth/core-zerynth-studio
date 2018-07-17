@@ -330,8 +330,8 @@ var ProfileModal = {
     else var percentage = parseInt(((100*(a+b+c+d+e+f+g))/7),10)
     // fill profile completeness bar and value
     $("#profile_complete").width(String(percentage)+'%')
-    if (percentage != 100 && !data.profile100) $("#completeness").html("Complete your profile to get a <b><u><font color=\"#468c8c\" onmouseenter=\"$(this).popover('show')\" onmouseleave=\"$(this).popover('hide')\" data-toggle=\"popover\" data-trigger=\"manual\" data-html=\"true\" data-placement=\"bottom\" title=\"How to get your bonus\" data-content=\"Complete all profile fields to get: <ul><li>1 more Zerynth Premium VM</li><li>30% discount on your next purchase of Zerynth licenses.</li></ul>\">Bonus</font></u></b> - "+String(percentage)+"% Complete")
-    else if (percentage == 100) $("#completeness").html("<font color=\"#468c8c\">"+String(percentage)+"% Complete</font>")
+    if (percentage != 100 && !data.profile100) $("#completeness").html("Complete your profile to get a <b><u><font color=\"var(--zcolor)\" onmouseenter=\"$(this).popover('show')\" onmouseleave=\"$(this).popover('hide')\" data-toggle=\"popover\" data-trigger=\"manual\" data-html=\"true\" data-placement=\"bottom\" title=\"How to get your bonus\" data-content=\"Complete all profile fields to get: <ul><li>1 more Zerynth Premium VM</li><li>30% discount on your next purchase of Zerynth licenses.</li></ul>\">Bonus</font></u></b> - "+String(percentage)+"% Complete")
+    else if (percentage == 100) $("#completeness").html("<font color=\"var(--zcolor)\">"+String(percentage)+"% Complete</font>")
     else $("#completeness").html(String(percentage)+"% Complete")
   },
   __show: function(){
@@ -402,7 +402,7 @@ var ProfileModal = {
 <div style="height: 330px;width:100%">
   <!-- Account Info Section -->
   <div class="col-sm-6" style="height: 330px;font-size:12px;">
-    <div class="text-center"><span class="fa fa-user" style="font-size:80px;color:#468c8c"></span></div>
+    <div class="text-center"><span class="fa fa-user" style="font-size:80px;color:var(--zcolor)"></span></div>
     <div style="font-size:25px;font-weight: bold;text-align: center" >{{:display_name}}</div>
     <br>
     <div style="font-style:italic;text-align:center">{{:email}}</div>

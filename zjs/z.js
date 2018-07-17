@@ -30,6 +30,7 @@ var Z = {
         return [pths,shifted]
     },
     zdir: function(path){
+
         var plt = (Z.os.platform().startsWith("win")) ? ("windows64"):(   (Z.os.platform().startsWith("linux")) ? ("linux64"):("mac"))
         var zz = (plt=="windows64") ? "zerynth2":".zerynth2"
         if (process.env.ZERYNTH_TESTMODE == 2){
@@ -37,6 +38,7 @@ var Z = {
         } else if (process.env.ZERYNTH_TESTMODE == 1){
             zz = (plt=="windows64") ? "zerynth2_local":".zerynth2_local"
         }
+        if (ZSkin) zz=zz+"_"+ZSkin.skin
         if (path) return Z.path.join(Z.homedir(),zz,path);
         else return Z.path.join(Z.homedir(),zz);
     },

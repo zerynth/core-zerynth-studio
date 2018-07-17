@@ -16,6 +16,7 @@ function Project(path){
     var me = this
     this.path = pth.normalize(path)
     this.projfile = pth.join(path,ZConf.projfilename)
+    this.cfgfile = pth.join(path,ZConf.cfgfilename)
     this.read_tree = function(options){
         console.log("READ TREE")
         return new Promise(function(resolve,reject){

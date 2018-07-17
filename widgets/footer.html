@@ -44,7 +44,7 @@ var Footer = {
 
 function handle_footer_notify(div){
     if (div.id=="buyvms_label"){
-        require('nw.gui').Shell.openExternal("https://store.zerynth.com/");
+        require('nw.gui').Shell.openExternal(ZConf.storeurl);
     } else if (div.id=="systemupdate_label"){
         Dialogs.modal("UpdateModal",Footer.versions)
     } else if (div.id=="patches_label"){

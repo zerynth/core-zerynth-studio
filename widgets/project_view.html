@@ -13,8 +13,8 @@ var ProjectView = {
     on_node_selected: function(event,node){
         var now = Date.now()
         if (
-          ProjectView.current_node  && 
-          ProjectView.current_node.fullname == node.fullname && 
+          ProjectView.current_node  &&
+          ProjectView.current_node.fullname == node.fullname &&
           (now-ProjectView.last_select<600)
           ){
           if (node.type=="f"){
@@ -35,6 +35,7 @@ var ProjectView = {
         var prj = Store.projects.current
         var picker = $("#project_picker")
         if (!prj) {
+            $("#dropdownPrjCfg").hide();
             $("#dropdownPrjGit").hide();
             $("#dropdownPrjKebab").hide();
             //empty select + no open project message
@@ -57,6 +58,7 @@ var ProjectView = {
             }
             return
         }
+        $("#dropdownPrjCfg").show();
         $("#dropdownPrjGit").show();
         $("#dropdownPrjKebab").show();
         ZNotify.wait("Loading project")
@@ -110,7 +112,7 @@ var ProjectView = {
           if(prj.info.git_url){
             $("#project_footer").html($.templates("#project_gitinfo").render(gitinfo))
             $(".opt_git").removeClass("disabled") //enable all
-            $("#opt_git_init").addClass("disabled") 
+            $("#opt_git_init").addClass("disabled")
           } else {
             $("#project_footer").html("");
             $(".opt_git").addClass("disabled") //disable all
@@ -216,7 +218,7 @@ var ProjectView = {
             ZNotify.done("Fail")
             if (cb) cb(false)
           })
-        
+
     },
     git_op: function(op){
         var prj = Store.projects.current
@@ -230,6 +232,34 @@ var ProjectView = {
             .catch((err)=>{
               ZNotify.done(err)
             })
+    },
+    conf_edit: function(){
+        var prj = Store.projects.current
+        if (!prj) return
+        var cfgfile = Z.path.join(prj.path,"project.yml")
+        if (!Z.fs.existsSync(cfgfile)) {
+            Z.fs.writeFileSync(cfgfile,"# Zerynth project configuration file\n\n")
+        }
+        Store.add_document(prj,cfgfile,true)
+
+
+    },
+    conf_browse: function(){
+        var prj = Store.projects.current
+        if (!prj) return
+        if (!ZDevices.selected) {
+            Z.log("Select a device first!")
+            return
+        }
+        ZTC.parse_configuration(prj.path,ZDevices.selected.target)
+            .then((res)=>{
+                console.log(res)
+                Dialogs.modal("ProjectCfgModal",res)
+            })
+            .catch((err)=>{
+                Z.log("Something wrong while reading configuration:"+err)
+            })
+
     }
 }
 
@@ -278,6 +308,15 @@ var ProjectView = {
     <div class="zleftheader">
       <div class="zleftheadertitle">Project view</div>
       <div class="dropdown  dropdown-kebab-pf">
+        <button class="btn btn-link dropdown-toggle" type="button" id="dropdownPrjCfg" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+          <span class="fa fa-gear fa-fw"></span>
+        </button>
+        <ul class="dropdown-menu " aria-labelledby="dropdownKebab">
+          <li id="opt_cfg_edit"><a href="javascript:ProjectView.conf_edit()">Set configuration...</a></li>
+          <li id="opt_cfg_browse"><a href="javascript:ProjectView.conf_browse()">Configuration browser...</a></li>
+        </ul>
+      </div>
+      <div class="dropdown  dropdown-kebab-pf">
         <button class="btn btn-link dropdown-toggle" type="button" id="dropdownPrjGit" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
           <span class="fa fa-code-fork fa-fw"></span>
         </button>
@@ -287,7 +326,6 @@ var ProjectView = {
           <li class="opt_git" id="opt_git_push"><a href="javascript:ProjectView.git_op('push')">Push</a></li>
           <li class="opt_git" id="opt_git_fetch"><a href="javascript:ProjectView.git_op('fetch')">Fetch</a></li>
           <li class="opt_git" id="opt_git_pull"><a href="javascript:ProjectView.git_op('pull')">Pull</a></li>
-        
         </ul>
       </div>
       <div class="dropdown  dropdown-kebab-pf">

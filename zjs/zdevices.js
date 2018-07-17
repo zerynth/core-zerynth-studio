@@ -164,6 +164,13 @@ var ZDevices = {
             })
             .catch((err)=>{console.log("Alias removal not OK:"+err)})
     },
+    erase_flash: function(dev){
+        ZTC.command(["device","erase_flash",dev.alias])
+            .then(()=>{
+                ZDevices.disambiguate()
+            })
+            .catch((err)=>{console.log("erase flash not OK:"+err)})
+    },
     add_virtual: function(targets){
         ZDevices.virtual_list=[]
         // var toadd= _.filter(targets,(item)=>{

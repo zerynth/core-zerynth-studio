@@ -15,6 +15,8 @@ var ZConf = {
         "pro_asset_received": "Pro Asset - 50 VMs - FreeRTOS"
     },
     projfilename: ".zproject",
+    cfgfilename: "project.yml",
+    user_agent:"ide",
     conf: {
         env:{
             workspaces:[Z.homedir()],
@@ -25,6 +27,8 @@ var ZConf = {
         device_mode:"auto"
     },
     init: function(){
+        var plt = (Z.os.platform().startsWith("win")) ? ("windows64"):(   (Z.os.platform().startsWith("linux")) ? ("linux64"):("mac"))
+        ZConf.platform = plt 
         if (process.env.ZERYNTH_TESTMODE == 1) {
             ZConf.oauth={
                 "google":"http://localhost/v1/user/google?json=1",
@@ -39,6 +43,7 @@ var ZConf = {
                 "github":"https://localhost/v1/user/github/auth",
             }
             ZConf.docurl = "http://localdoc"
+            ZConf.storeurl = "http://localhost/?skin="+((ZSkin) ? ZSkin.skin:"none")
             ZConf.url = "http://localhost/v1"
             ZConf.adm_url = "http://localhost:7700"
             ZConf.testmode = true
@@ -47,6 +52,7 @@ var ZConf = {
                     "google":"https://test.zerynth.com/v1/user/google?json=1",
                     "facebook":"https://test.zerynth.com/v1/user/facebook?json=1",
                     "zerynth":"https://test.zerynth.com/v1/user",
+                    //"zerynth":"https://test.zerynth.com/v1/user",
                     "github":"https://github.com/login/oauth/authorize?client_id=882c71c6f98cd0354d97&scope=user,repo&state=",
                 },
             ZConf.redirect = {
@@ -55,8 +61,10 @@ var ZConf = {
                     "zerynth":"https://test.zerynth.com/v1/user",  
                     "github":"https://test.zerynth.com/v1/user/github/auth",
             }
-            ZConf.docurl = "http://docs.zerynth.com"
-            ZConf.url = "http://test.zerynth.com/v1"
+            ZConf.docurl = "https://testdocs.zerynth.com"
+            // ZConf.url = "http://test.zerynth.com/v1"
+            ZConf.url = "https://test.zerynth.com/v1"
+            ZConf.storeurl = "https://storetest.zerynth.com/?skin="+((ZSkin) ? ZSkin.skin:"none")
             ZConf.adm_url = "http://test.zerynth.com:7700"
             ZConf.testmode = true
             ZConf.cimode = true
@@ -75,6 +83,7 @@ var ZConf = {
             }
             ZConf.docurl = "http://docs.zerynth.com"
             ZConf.url = "http://backend.zerynth.com/v1"
+            ZConf.storeurl = "https://store.zerynth.com/?skin="+((ZSkin) ? ZSkin.skin:"none")
             ZConf.adm_url = "https://api.zerynth.com/v1"
             ZConf.testmode = false
         }
@@ -94,6 +103,7 @@ var ZConf = {
             } catch(err){
                 ZConf.patch = "base"
             }
+            if (ZSkin) ZConf.user_agent=ZSkin.skin+"_ide"
         } catch (err){
             ZConf.dist_dir=Z.path.join(ZConf.dist_dir,"r2.0.0")
         }

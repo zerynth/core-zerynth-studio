@@ -1,0 +1,155 @@
+<script>
+
+var ProjectCfgModal = {
+    current: null,
+    cfg: null,
+    selected: 0,
+  __fill: function(data){
+        var current = data[1]
+        var cfg = _.map(data[0],(v,k,l)=>{ return {module:k,mcfg:v,module_id: k.replace(/\./g,"_")}})
+        cfg = _.sortBy(cfg,(item)=>{return item.module})
+        ProjectCfgModal.current = current
+        ProjectCfgModal.cfg = cfg
+      console.log(cfg)
+  },
+  __show: function(){
+        $("#project_cfg_mlist").html($.templates("#project_cfg_modal_row").render(ProjectCfgModal.cfg))
+        $("#project_cfg_modal").modal()
+        ProjectCfgModal.show_config("__main__")
+  },
+  show_config: function(module){
+    $(".prjcfgmodal_item").removeClass("active")
+    $("#prjcfgmodal_"+module.replace(/\./g,"_")).addClass("active")
+    var themod = _.find(ProjectCfgModal.cfg,(v)=>{return v.module==module})
+    var main =_.find(ProjectCfgModal.cfg,(v)=>{return v.module=="__main__"})
+      var opts = _.map(themod.mcfg.cfg.options || {},(v,k,l)=>{
+        return {
+            def: k,
+            help: v.help,
+            value: main.mcfg.cfg.config[k],
+            module: themod.module,
+        }
+      })
+      var curr = _.map(themod.mcfg.cfg.config || {},(v,k,l)=>{
+        return {
+            def: k,
+            value: v,
+            module: "__main__"
+        }
+      })
+    if (module=="__main__"){
+        $("#project_cfg_modal_options").html($.templates("#project_cfg_modal_opts").render(curr))
+        $("#project_cfg_modal_optitle").html("Current Configuration")
+    } else {
+        $("#project_cfg_modal_options").html($.templates("#project_cfg_modal_opts").render(opts))
+        $("#project_cfg_modal_optitle").html("Available Options")
+    }
+  },
+  upd_opt: function(def,module,result){
+    Store.remove_project_config(Store.projects.current)
+    ZTC.update_configuration(Store.projects.current.path,def,result)
+        .then(()=>{
+                ZTC.parse_configuration(Store.projects.current.path,ZDevices.selected.target)
+                .then((res)=>{
+                     ProjectCfgModal.__fill(res)
+                     $("#project_cfg_mlist").html($.templates("#project_cfg_modal_row").render(ProjectCfgModal.cfg))
+                     ProjectCfgModal.show_config(module)
+                })
+                .catch((err)=>{
+                    Z.log("Something wrong while reading configuration:"+err)
+                })
+        })
+        .catch((err)=>{
+            Z.log("Something wrong while updating configuration: "+err)
+        })
+  },
+  del_opt: function(def,module){
+    bootbox.confirm("Are you sure you want to disable option "+def+"?", function(result){ 
+        ProjectCfgModal.upd_opt(def,module,null)
+    });
+  },
+  add_opt: function(def,module){
+    bootbox.prompt("Enter a new value for "+def, function(result){ 
+        if(result===null) return;
+        if (result=="") return;
+        ProjectCfgModal.upd_opt(def,module,result)
+    });
+  }
+}
+
+</script>
+<script id="project_cfg_modal_row" type="text/x-jsrender">
+<a href="javascript:ProjectCfgModal.show_config('{{:module}}')" class="list-group-item prjcfgmodal_item" id="prjcfgmodal_{{:module_id}}">{{:module}}</a>
+</script>
+
+<script id="project_cfg_modal_opts" type="text/x-jsrender">
+  <a href="javascript:void(0)" class="list-group-item">
+    <h4 class="list-group-item-heading">{{:def}}</h4>
+    {{if help}}
+    <p class="list-group-item-text" style="font-style:italic">{{:help}}</p>
+    {{/if}}
+    {{if value===undefined || value===null}}
+    <p class="list-group-item-text">
+    Current value: Not defined
+    </p>
+    {{else}}
+    <p class="list-group-item-text">Current value: {{:value}}
+    </p>
+    {{/if}}
+    <button class="btn btn-xs btn-primary" onclick="javascript:ProjectCfgModal.add_opt('{{:def}}','{{:module}}')"><span class="fa fa-pencil"></span></button>
+    <button class="btn btn-xs btn-danger" onclick="javascript:ProjectCfgModal.del_opt('{{:def}}','{{:module}}')"><span class="fa fa-remove"></span></button>
+  </a>
+</div>
+</script>
+
+<script id="project_cfg_modal_main" type="text/x-jsrender">
+  <a href="javascript:void(0)" class="list-group-item">
+    <h4 class="list-group-item-heading">{{:def}}</h4>
+    {{if help}}
+    <p class="list-group-item-text">{{:help}}</p>
+    {{/if}}
+    {{if value===undefined || value===null}}
+    <p class="list-group-item-text">Not defined</p>
+    {{else}}
+    <p class="list-group-item-text">{{:value}}</p>
+    {{/if}}
+  </a>
+</div>
+</script>
+
+
+<div class="modal fade" id="project_cfg_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog" style="min-width:60%">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">Project Configuration</h4>
+      </div>
+      <div class="modal-body container-fluid">
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Modules</div>
+                        <div class="list-group" id="project_cfg_mlist">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">Configuration</div>
+                        <div class="panel-body" id="project_cfg_modal_browser">
+                            <h3 id="project_cfg_modal_optitle">Configuration</h3>
+                            <div class="list-group" id="project_cfg_modal_options">
+                        </div>
+                    </div>
+                 </div>
+            </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>

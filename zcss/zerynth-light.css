@@ -11,7 +11,7 @@
 
 .theme-zerynth-light .zleftbar {
     background:#cecece;
-    border-right: solid 1px #468c8c;
+    border-right: solid 1px var(--zcolor);
 }
 
 .theme-zerynth-light .zleftbar .btn {
@@ -21,7 +21,7 @@
 
 .theme-zerynth-light .zleftbar .btn:focus,
 .theme-zerynth-light .zleftbar .current {
-    background: #468c8c;
+    background: var(--zcolor);
     color: #fff;
 }
 
@@ -56,7 +56,7 @@
 .theme-zerynth-light #code_tablist .code_tab.current {
     background-color: #ccc;
     color:#333;
-    border-left: 4px solid #468c8c;
+    border-left: 4px solid var(--zcolor);
     border-bottom: 0px solid #ddd;
 }
 
@@ -155,7 +155,7 @@
 
 
 .theme-zerynth-light .zpm_pack_inst:hover {
-    color:#468c8c;
+    color:var(--zcolor);
 }
 
 .theme-zerynth-light #footer {

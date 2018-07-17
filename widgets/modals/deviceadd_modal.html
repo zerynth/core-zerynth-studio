@@ -27,12 +27,16 @@ var DeviceAddModal = {
     ZDevices.add_virtual(targets)
     $("#deviceadd_modal").modal("hide")
   },
+  select: function(row){
+    row.children('td').children('input').prop('checked', !row.children('td').children('input').prop("checked"));
+    DeviceAddModal.upd_virtual(row.children('td').children('input'))
+  },
   upd_virtual: function(cb){
-    if (cb.checked == true){
-      ZDevices.targets[cb.name].selected = true
+    if (cb.prop("checked") == true){
+      ZDevices.targets[cb.prop("name")].selected = true
     }
     else{
-      ZDevices.targets[cb.name].selected = false
+      ZDevices.targets[cb.prop("name")].selected = false
     }
   },
   create_table: function(devices){
@@ -70,8 +74,8 @@ var DeviceAddModal = {
 </html>
 
 <script id="deviceadd_modal_row" type="text/x-jsrender">
-<tr>
-  <td><input type="checkbox" name="{{:target}}" {{if selected}}checked{{/if}} onchange="DeviceAddModal.upd_virtual(this);"></td>
+<tr onclick="DeviceAddModal.select($(this))">
+  <td><input type="checkbox" name="{{:target}}" {{if selected}}checked{{/if}}></td>
   <td>{{:name}}</td>
   <td>{{:board_producer}}</td>
   <td>{{:architecture}}</td>
@@ -93,8 +97,10 @@ var DeviceAddModal = {
         <input style="width: 100%; background-image: url('img/searchicon.png'); background-position: 10px 10px; background-repeat: no-repeat; font-size: 14px; padding: 10px 20px 10px 40px; border: 1px solid #ddd;" type="text" id="tsearch" onkeyup="DeviceAddModal.search_in_table()" placeholder="Search for Virtual Device..."title="Type in a name">
         <br>
         <br>
-        <table class="table table-striped table-bordered" id="deviceadd_modal_table" style="max-height: 400px">
-        </table>
+        <div style="max-height: 700px; overflow-y: auto;">
+          <table class="table table-striped table-bordered" id="deviceadd_modal_table" style="max-height: 400px;">
+          </table>
+        </div>
         <div class="alert alert-danger" style="display:none">
           <span class="pficon pficon-error-circle-o" ></span><p id="deviceadd_error"></p>
         </div>

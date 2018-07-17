@@ -46,7 +46,7 @@ var ZTC = {
             var opt = options || {}
             var cmdline = ZTC.python
             if(!opt.raw){ //ignore if raw
-                args.unshift("ide")
+                args.unshift(ZConf.user_agent)
                 args.unshift("--user_agent")
                 args.unshift("-J")
                 args.unshift("--traceback")
@@ -81,6 +81,7 @@ var ZTC = {
             //TODO: do this conditionally on opt.background
             cmd.on("close",(code)=>{
                 if (opt.background && ZStore) ZStore.del_command(cmd)
+                if (opt.closecb) opt.closecb(code)
                 if(opt.always_resolve) resolve()
                 else if(code==0) resolve();
                 else reject(code)
@@ -154,6 +155,52 @@ var ZTC = {
         })
 
     },
+    parse_configuration: function(prj,target){
+        return new Promise((resolve,reject)=>{
+            var res=[]
+            ZTC.command(["compile",prj,target,"--config"],{
+                always_resolve: true,
+                stdout: (line)=>{
+                    try{
+                        res = JSON.parse(line)
+                    } catch(err){
+                        console.log(err) //ignore [info]
+                        Z.log(line)
+                    }
+                }
+            })
+            .then(()=>{
+                resolve(res)
+            })
+            .catch((err)=>{
+                reject(err)
+            })
+        })
+
+    },
+    update_configuration: function(prj,def,value){
+        return new Promise((resolve,reject)=>{
+            var res=[]
+            var args = ["project","config",prj]
+            if (value===null) {
+                args.push("-X")
+                args.push(def)
+            } else {
+                args.push("-D")
+                args.push(def)
+                args.push(value)
+            }
+
+            ZTC.command(args)
+            .then(()=>{
+                resolve(res)
+            })
+            .catch((err)=>{
+                reject(err)
+            })
+        })
+
+    },
     inspect: function(target,probe){
         return new Promise((resolve,reject)=>{
             var inspection=null
@@ -210,7 +257,7 @@ var ZTC = {
                                 .catch((err)=>{
                                     reject(err)
                                 })
-                            
+
                         })
                         .catch((err)=>{
                             reject(err)
@@ -224,13 +271,13 @@ var ZTC = {
                         reject(err)
                     })
                 }
-            
+
             }
         })
     },
     link:function(vmuid,bytecode,vmslot,bcslot,output,binary){
         return new Promise((resolve,reject)=>{
-            args =["link",vmuid,bytecode,"--vm",vmslot,"--bc",bcslot,"--file",output] 
+            args =["link",vmuid,bytecode,"--vm",vmslot,"--bc",bcslot,"--file",output,"--debug_bytecode"]
             if (binary) args.push("--bin")
             ZTC.command(args,{
                 stdout: (line)=>{
@@ -417,14 +464,15 @@ var ZTC = {
                 })
         })
     },
-    get_profile: function(){
+    get_profile: function(stderr){
         return new Promise((resolve,reject)=>{
             var cmd = ["profile"]
             var res
             ZTC.command(cmd,{
                 stdout: (line)=>{
                     res = JSON.parse(line)
-                }
+                },
+                stderr: stderr
                 })
                 .then(()=>{
                     resolve(res)
@@ -579,7 +627,7 @@ var ZTC = {
         var tot=100
         var cnt=0
         var _from=0;
-        
+
         return new Promise((resolve,reject)=>{
             Z.async.whilst(
                 ()=>{return cnt<tot},
@@ -602,7 +650,7 @@ var ZTC = {
                         })
                         .catch((err)=>{
                             callback(err)
-                        })                    
+                        })
                 },
                 (err)=>{
                     if (err==null) resolve(prjs)
@@ -1063,7 +1111,27 @@ var ZTC = {
                     reject(err)
                 })
         })
+    },
+    redeem_code: function(code){
+        return new Promise((resolve,reject)=>{
+            var cmd = ["redeem",code]
+            var res;
+            ZTC.command(cmd,{
+                stdout: (line)=>{
+                    console.log(line)
+                    try{
+                        res = JSON.parse(line)
+                    } catch(err){
+                        console.log(err) //ignore [info]
+                    }
+                }
+            })
+                .then(()=>{
+                    resolve(res)
+                })
+                .catch((err)=>{
+                    reject(err)
+                })
+        })
     }
-
-
 }

@@ -26,7 +26,7 @@ var App = {
             var mwin = gui.Window.get()
             nw.Screen.Init()
             //TODO: restore previous values
-            
+
             mwin.show();
             mwin.focus();
             mwin.on('maximize', function () {
@@ -67,12 +67,12 @@ var App = {
                     }))
                     mwin.close(true)
                 })
-                
+
             })
             mwin.on("closed",function(){
                 //TODO: warning before closing
             })
-            
+
             //configure system menu
             var menu = new nw.Menu({type: 'menubar'});
 
@@ -80,16 +80,16 @@ var App = {
             if (process.platform === "darwin") {
                 menu.createMacBuiltin('Zerynth Studio', {hideEdit: false,});
             }
-    
+
             var submenu = new nw.Menu()
             var subsubmenu = new nw.Menu()
-            
+
             subsubmenu.append(new nw.MenuItem({label:"Create Repository...",click:()=>{ProjectView.git_init()}}))
             subsubmenu.append(new nw.MenuItem({label:"Commit Changes...",click:()=>{ProjectView.git_op("commit")}}))
             subsubmenu.append(new nw.MenuItem({label:"Push...",click:()=>{ProjectView.git_op("push")}}))
             subsubmenu.append(new nw.MenuItem({label:"Pull...",click:()=>{ProjectView.git_op("pull")}}))
             subsubmenu.append(new nw.MenuItem({label:"Fetch...",click:()=>{ProjectView.git_op("fetch")}}))
-            
+
             var recent_submenu = new nw.Menu()
             App.empty_label = new nw.MenuItem({label:"empty",is_empty:true})
             App.empty_label_uninst = new nw.MenuItem({label:"empty",is_empty:true})
@@ -139,9 +139,12 @@ var App = {
             App.uninst_submenu = subsubmenu
             submenu.append(new nw.MenuItem({label:"Remove installation",submenu:subsubmenu}))
             submenu.append(new nw.MenuItem({label:"Clean temp folder",click:()=>{App.clean()}}))
+            submenu.append(new nw.MenuItem({type:"separator"}))
             submenu.append(new nw.MenuItem({label:"Forget all devices",click:()=>{App.clean_db()}}))
             submenu.append(new nw.MenuItem({label:"Show messages",click:()=>{Dialogs.modal("MessagesModal",Footer.messages)}}))
             submenu.append(new nw.MenuItem({label:"Check Updates",click:()=>{App._update_checker()}}))
+            submenu.append(new nw.MenuItem({type:"separator"}))
+            submenu.append(new nw.MenuItem({label:"Redeem Licenses",click:()=>{Dialogs.modal("RedeemModal")}}))
             menu.append(new nw.MenuItem({label:"Preferences",submenu:submenu}))
             App.update_uninst_menu()
 
@@ -168,7 +171,7 @@ var App = {
             mwin.menu = menu;
             App.menu = menu
             App.win = mwin
-    
+
             App.universal_search=false
 
             App.initWidgets().then(()=>{
@@ -188,7 +191,7 @@ var App = {
                 //disable autocomplete
                 $( document ).on( 'focus', ':input', function(){
                         $( this ).attr( 'autocomplete', 'off' );
-                });                
+                });
                 $('.selectpicker').selectpicker(); //move in project_view
                 $("#device_picker").selectpicker('show')
                 $("#device_manual_picker").selectpicker('hide')
@@ -217,18 +220,21 @@ var App = {
                 ZApi.check_token()
                     .then((token)=>{
                         App.startupwin()
-                        ZTC.get_profile()
+                        //there is a timing issue with put_token since it calls a ZTC command 
+                        //and the promise can return later than the get_profile reading the token.json
+                        ZTC.get_profile(()=>{})  //don't show error messages here
                             .then((profile)=>{
                                 if (profile=="Unauthorized"){
                                     $('#LoginModal').modal()
                                 } else {
                                     Store.set_profile(profile)
+                                    Z.log("Ok")
                                     Bus.dispatch("login_ok")
                                 }
                             })
                             .catch((err)=>{
                                 Store.set_profile(null)
-                                Z.log("WARNING!! Can't retrieve user info!")
+                                Z.log("Retrying authorization...")
                             })
                     })
                     .catch((err)=>{
@@ -258,13 +264,14 @@ var App = {
         console.log("LOGIN OK!!!!")
         App.initUpdateChecker()
         if (!Store.profile) {
-            ZTC.get_profile()
+            ZTC.get_profile(()=>{})
                 .then((profile)=>{
                     Store.set_profile(profile)
+                    Z.log("Ok")
                 })
                 .catch((err)=>{
                     Store.set_profile(null)
-                    Z.log("WARNING!! Can't retrieve user info!")
+                    Z.log("Retrying authorization...")
                 })
         }
     },
@@ -280,7 +287,7 @@ var App = {
         } else {
             App.win.maximize();
         }
-        
+
 
     },
     initWidgets: function(){
@@ -342,7 +349,7 @@ var App = {
             enableLiveAutocompletion: true
         })
         App.set_editor_zoom(ZConf.get("editor_font_size"))
-        
+
         /*
         //TODO: add Zerynth completers
         var staticCompleter = {
@@ -570,7 +577,7 @@ var App = {
                     console.log("err reading json:"+err)
                 }
             }}).then(()=>{
-        
+
                 if (versions.minor_update){
                     ZTC.command(["package","describe",versions.last_patch],{
                     stdout:(line)=>{
@@ -594,7 +601,7 @@ var App = {
                         Z.log("Error while checking for updates 2:"+err)
                         ZNotify.done()
                     })
-                
+
                 } else {
                     updated = {
                         versions: versions,
@@ -608,7 +615,7 @@ var App = {
             }).catch((err)=>{
                 Z.log("Error while checking for updates 1:"+err)
                 ZNotify.done()
-            }) 
+            })
 
         }).catch((err)=>{
             Z.log("Error while checking for updates 3:"+err)
@@ -725,7 +732,7 @@ var App = {
                         if (data.errors.length>0) reject("Errors during compilation")
                         else resolve(data)
                     })
-                    .catch((err)=>{ 
+                    .catch((err)=>{
                         Store.action("compiling",false)
                         reject(err)
                     })
@@ -760,7 +767,7 @@ var App = {
                 if (errcb) errcb(err)
             })
     },
-    uplink_current_project:function(){
+    uplink_current_project:function(cb){
         if (!App.check_actions()) return
         var prj = Store.projects.current
         if (!prj) return
@@ -768,6 +775,11 @@ var App = {
         if (!tgt || !tgt.target) {
             ZNotify.alert("Select a target device first!","No device selected","error")
             return
+        }
+        var console_was_opened = false
+        if (tgt.alias in Store.consoles){
+            console_was_opened = true
+            Store.consoles[tgt.alias].win.close()
         }
         ZNotify.wait("Compiling...")
         App._compile(prj,tgt.target)
@@ -778,14 +790,20 @@ var App = {
                     .then(()=>{
                         Store.action("uplinking",false)
                         ZNotify.done()
+                        if (console_was_opened){
+                            App.open_console()
+                        }
+                        if (cb) cb(true)
                     })
                     .catch((err)=>{
                         Store.action("uplinking",false)
                         ZNotify.done(err)
+                        if (cb) cb()
                     })
             })
             .catch((err)=>{
                 ZNotify.done(err)
+                if (cb) cb()
             })
     },
     open_console: function(){
@@ -803,7 +821,7 @@ var App = {
             //new window!
             if (dev.manual) {
                 Z.fs.writeFileSync(consolejs,'var console_alias=false;var console_title="'+dev.name+'@'+dev.port+'";var console_baud=115200;var console_parity=0;var console_stop=0;var console_port="'+dev.port+'";')
-                
+
             } else {
                 Z.fs.writeFileSync(consolejs,'var console_alias="'+(cid)+'";var console_title="'+dev.name+'@'+dev.port+'";var console_baud=115200;var console_parity=0;var console_stop=0;')
             }
@@ -847,7 +865,7 @@ var App = {
             })
     },
     virtualize: function(){
-        
+
         var dev = ZDevices.selected
         if (!dev){
             ZNotify.alert("Please select a device first!","Error","error")
@@ -909,7 +927,7 @@ var App = {
             })
             .catch((err)=>{
                 Z.log("Can't update all:"+err)
-            }) 
+            })
     },
     pack_doc: function(fullname,repo){
         var url = ZConf.docurl+"/latest/"+repo+"/"+fullname+"/docs"
@@ -1015,7 +1033,7 @@ var App = {
     },
     handle_submenus: function(){
         App.update_recent_menu()
-        
+
         //Mac Os menu has native menu before zerynth menu...
         var offset = (process.platform.startsWith("darwin")) ? 3:0
         var pmenu = App.menu.items[offset].submenu.items
@@ -1048,7 +1066,7 @@ var App = {
 
             }
         }
-      
+
         //Device
         var dev = ZDevices.selected
         if(dev) {
@@ -1181,8 +1199,8 @@ var App = {
                 }
             },
             callback: function (result) {
-                if (result===null){
-                    d.modal("hide")
+                if (result==false){
+                    confirm.modal("hide")
                 } else {
                     ZTC.command(["clean","--db"]).then(()=>{
                         ZDevices.disambiguate()
@@ -1203,7 +1221,7 @@ var App = {
         _.each(vdirs,(v,k,l)=>{
             if (v!=ZConf.vrs) App.uninst_submenu.append(new nw.MenuItem({label:v,click:()=>{App.clean(v)}}))
         })
-        
+
         if (App.uninst_submenu.items.length==0){
             App.uninst_submenu.append(App.empty_label_uninst)
         }
@@ -1220,7 +1238,7 @@ var App = {
         +"Version: "+ZConf.vrs+"%0D%0A"
         +"System:  "+encodeURIComponent(Z.os.platform()+" "+Z.os.release())+"%0D%0A"
         +"Timezone:"+encodeURIComponent(timezone)+"%0D%0A"
-        
+
         nw.Shell.openExternal("mailto:support@zerynth.com?subject="+subject+"&body="+body);
     },
     toggle_vimode: function(){
@@ -1235,26 +1253,56 @@ var App = {
     },
     start_debug: function(){
         if (!ZDevices.selected) return
+        if (!ZDevices.selected.probe) {
+            Z.log("Only devices supporting JTAG probes can be debugged!")
+            return
+        }
+        if (!Store.projects.current) return
+
         if (Store.debugging) {
             Store.open_window("http://127.0.0.1:5000/")
             return
         }
-        ZTC.command(["debugger","start",ZDevices.selected.target],{background:true})
+
+        App.uplink_current_project((res)=>{
+            if(!res) {
+                Z.log("There are project errors, can't start debugging!")
+                return
+            }
+            var infile = Z.path.join(ZConf.tempdir,"zstudio.vbo")
+            var started = false
+            ZTC.command(["debugger","start",ZDevices.selected.target,ZDevices.selected.probe,"--bytecode",infile],{
+                background:true,
+                stderr: (line)=>{
+                    if (line.includes("Running on http://")){
+                        Store.debugging=true
+                        started=true
+                        Store.open_window("http://127.0.0.1:5000/",{close_callback: ()=>{
+                            console.log("CLOSING!")
+                            ZTC.command(["debugger","stop"])
+                            Store.debugging=false
+                        }})
+                    } else if(!started) Z.log(line)
+                },
+                closecb: (ok)=>{
+                    if (ok==0) {
+                        Z.log("Debugging session closed")
+                    } else {
+                        Z.log("Debugging session error!")
+                    }
+                }
+            })
             .then(()=>{
                 console.log("Debugger started")
-                Store.debugging=true
-                Store.open_window("http://127.0.0.1:5000/",{close_callback: ()=>{
-                    console.log("CLOSING!")
-                    ZTC.command(["debugger","stop"])
-                    Store.debugging=false
-                }})
             })
             .catch((err)=>{
                 console.log(err)
             })
+        })
+
     },
     stop_debug: function(){
-    
+
     }
 
 

@@ -112,6 +112,7 @@ var ZButtonModal = {
     } else {
       //no chipid, go to registration
       $("#zbutton_register_box").show()
+      $("#zbutton_redeem_section").show()
       $("#zbutton_createvm_box").hide()
       $("#zbutton_virtualize_box").hide()
     }
@@ -193,6 +194,10 @@ var ZButtonModal = {
     var target = ZButtonModal.dev.original_target || ZButtonModal.dev.target
     ZTC.vmlist(target)
         .then((vms)=>{
+            if (!ZConf.rtoses || !ZConf.features){
+              ZConf.rtoses = vms.rtoses
+              ZConf.features = vms.features
+            }
             ZTC.vmlistcreated(ZButtonModal.dev.remote_id)
               .then((my_vms)=>{
                 ZButtonModal.__hide()
@@ -228,7 +233,26 @@ var ZButtonModal = {
     console.log(Store.vms)
       Dialogs.modal("VirtualizeModal",Store.vms[target][chipid])
     }
-  }
+  },
+    redeem: function(){
+        var code = $.trim($("#zbutton_redeem_code").val())
+        if(!code) return
+        $("#zbutton_redeem_waiting").show()
+        ZTC.redeem_code(code)
+              .then((asset)=>{
+                console.log(asset)
+                $("#zbutton_redeem_waiting").hide()
+                var what = (asset["target"]=="*") ? ("for any device"):("for devices of type "+asset["target"])
+                bootbox.alert("Code redeemed! You now have "+asset["value"]+" "+( asset["pro"] ? "premium":"starter")+" virtual machine(s) "+what,()=>{
+                    $("#zbutton_redeem_section").hide()
+                  } )
+              })
+              .catch((err)=>{
+                  console.log(err)
+                  $("#zbutton_redeem_waiting").hide()
+                  bootbox.alert("Ouch! Can't redeem code...")
+              })
+    }
 }
 
 </script>
@@ -262,6 +286,25 @@ var ZButtonModal = {
             <div class="col-sm-3" style="text-align:center">
               <button id="zbutton_register" style="width:80%" class="btn btn-primary" onclick="ZButtonModal.register()">Register</button>
             </div>
+          </div>
+          <div id="zbutton_redeem_section">
+              <div class="row">
+                <div class="col-sm-12">
+                  <hr>
+                  <p id="zbutton_redeem_text" style="text-align:center">Do you have a Zerynth powered device?<img src="img/zpowered.png" style="height:48px;vertical-align:middle" /></p>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-sm-3">
+                    Redeem your license
+                </div>
+                <div class="col-sm-6">
+                    <input type="text" id="zbutton_redeem_code" class="form-control" placeholder="CC-XXXXX-YYYYY-ZZZZZ-WWWWW">
+                </div>
+                <div class="col-sm-3" style="text-align:center">
+                    <button id="zbutton_redeem" style="width:80%" class="btn btn-primary" onclick="ZButtonModal.redeem()">Go<span class="spinner spinner-xs spinner-inline" id="zbutton_redeem_waiting" style="display:none"></span></button>
+                </div>
+              </div>
           </div>
         </div>
         <div id="zbutton_createvm_box">

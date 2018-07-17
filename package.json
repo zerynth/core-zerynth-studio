@@ -1,7 +1,7 @@
 {
     "dependencies": {
-        "core.zerynth.toolchain": "r2.1.1",
-        "sys.zerynth.browser": "r2.1.1"
+        "core.zerynth.toolchain": "r2.1.2",
+        "sys.zerynth.browser": "r2.1.2"
     },
     "description": "Zerynth Studio",
     "fullname": "core.zerynth.studio",
@@ -9,6 +9,7 @@
     "keywords": [],
     "repo": "official",
     "title": "Zerynth Studio",
-    "version": "r2.1.1",
-    "whatsnew": ""
+    "version": "r2.1.2",
+    "whatsnew": "",
+    "skinnable":true
 }

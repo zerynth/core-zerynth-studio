@@ -13,7 +13,7 @@
         <link href="css/layout-default-latest.css" rel="stylesheet" type="text/css" />
 
         <link href="bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
-        
+
          <!-- PatternFly Styles -->
         <link href="bower_components/patternfly/dist/css/patternfly.min.css" rel="stylesheet" media="screen, print">
         <link href="bower_components/patternfly/dist/css/patternfly-additions.min.css" rel="stylesheet" media="screen, print">
@@ -37,17 +37,17 @@
         <script src="bower_components/bootstrap-combobox/js/bootstrap-combobox.js"></script>
         <script src="bower_components/bootstrap-tagsinput/src/bootstrap-tagsinput.js"></script>
         <link rel="stylesheet" href="bower_components/bootstrap-tagsinput/src/bootstrap-tagsinput.css">
-        
+
         <!-- Layout -->
         <script type="text/javascript" src="js/libs/jquery-ui/jquery-ui.min.js"></script>
         <script type="text/javascript" src="js/libs/jquery.layout-latest.js"></script>
         <link rel="stylesheet" href="js/libs/jquery-ui/jquery-ui.min.css" />
-        
+
 
         <link rel="stylesheet" href="bower_components/jquery-shorten-js/dist/css/shorten.min.css">
         <script src="bower_components/jquery-shorten-js/dist/jquery-shorten.min.js"></script>
-        
-        <link rel="stylesheet" href="bower_components/bootstrap-table/dist/bootstra-table.min.css">
+
+        <link rel="stylesheet" href="bower_components/bootstrap-table/dist/bootstrap-table.min.css">
         <script src="bower_components/bootstrap-table/dist/bootstrap-table.min.js"></script>
 
         <!-- Fuse -->
@@ -57,8 +57,9 @@
         <script src="bower_components/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
         <script src="bower_components/bootbox.js/bootbox.js"></script>
 
-        
+
         <!-- ZJS LIBS -->
+        <script type="text/javascript" src="zjs/zskin.js"></script>
         <script type="text/javascript" src="zjs/z.js"></script>
         <script type="text/javascript" src="zjs/zconf.js"></script>
         <script type="text/javascript" src="zjs/login.js"></script>
@@ -69,7 +70,7 @@
         <script type="text/javascript" src="zjs/zindexer.js"></script>
         <script type="text/javascript" src="zjs/widgets/dialogs.js"></script>
         <script type="text/javascript" src="zjs/widgets/notify.js"></script>
-        
+
 
         <!-- Z Styles -->
         <link href="zcss/zerynth.css" rel="stylesheet"  type="text/css"/>
@@ -125,9 +126,11 @@
         </div>
 <!-- MODALS -->
 
+<div class="zwidget" target="widgets/modals/redeem_modal.html"></div>
 <div class="zwidget" target="widgets/modals/login_modal.html"></div>
 <div class="zwidget" target="widgets/modals/project_new.html"></div>
 <div class="zwidget" target="widgets/modals/project_clone.html"></div>
+<div class="zwidget" target="widgets/modals/project_conf.html"></div>
 <!-- <div class="zwidget" target="widgets/modals/project_publish.html"></div> -->
 <div class="zwidget" target="widgets/modals/library_publish.html"></div>
 <div class="zwidget" target="widgets/modals/device_disambiguate.html"></div>
@@ -176,7 +179,7 @@
 <script type="text/javascript" src="zjs/appstore.js"></script>
 <script type="text/javascript" src="zjs/app.js"></script>
 
- 
+
 <!-- DEBUG RELOAD TODO: REMOVE!
 <script>
   var fs = require('fs');
@@ -184,7 +187,7 @@
     App.win.reloadIgnoringCache()
   }
 
-  fs.watch("./",rld); 
+  fs.watch("./",rld);
   fs.watch("./css",rld);
   fs.watch("./zcss",rld);
   fs.watch("./js",rld);

@@ -43,7 +43,7 @@ The Toolbar is placed at the top of the Zerynth Studio window just under the sys
    :figwidth: 100% 
    :alt: Zerynth Studio Toolbar
 
-It contains two separate sections; on the left side there is the list of opened projects with the current one highlighted. Buttons to compile and uplink the current project lie just to the right of it. At the center of the toolbar there is the device management widget, whereas to the right of the screen, an account button allows accessing the user profile and assets.
+It contains two separate sections; on the left side there is the list of opened projects with the current one highlighted. Buttons to compile, uplink and debug the current project lie just to the right of it. At the center of the toolbar there is the device management widget, whereas to the right of the screen, an account button allows accessing the user profile and assets.
 
 
 .. _zerynth-studio-device:
@@ -52,6 +52,8 @@ Device Management Widget
 ------------------------
 
 Zerynth Studio automatically recognizes connected devices, being them development boards, usb to serial converters or board programming tools. The connected devices are listed in the device management widget. The currently selected device will be used as a target device by the compiler and the uplinker.
+
+.. note:: :ref:`Project Debugging <zerynth-studio-debugger>` is available only coupled with :ref:`Advanced Device Management <zerynth-studio-device-advanced>`
 
 .. figure:: /custom/img/select_device.jpg
    :align: center
@@ -64,9 +66,15 @@ The device discovery algorithm tries its best to infer the type of the connected
 
 Once a device has been connected, the buttons to the right of the device list allow the following interactions:
 
-* *Device Registration & Virtualization*: by clicking the "Z" button, a registraion and virtualization dialog is displayed. If the target device has never been connected before, the only possible action is to register the device. The registration procedure is necessary to retrieve enough device information for allowing the Zerynth backend to build a virtual machine for the device. Once registration has been performed, the user is given the option to create a Virtual Machine for the registered deice. Here the user can select one of different virtual machines compatible with the target device. Finally, the created Virtual Machine can be virtualized (i.e. burned on the device). Some devices cannot be recognized automatically; for these devices, the dialog provides some more options to be specified before the actual registration/virtualization can take place. Finally, a device can always be registered again with the dedicated dialog button.
-* *Serial Console*: by clicking the rightmost button,the serial port of the target device can be opened and the output inspected.
-* *Device information and PinMap*: the central buttons can be used to retrieve device information (expecially the serial port and/or the mounted volume) and to show the device pinmap. Please refer to the :ref:`Programming Guide <ZERYNTHprog>` section for more details on how pin names and functionalities are organized in Zerynth.
+* **Device Registration & Virtualization**: by clicking the "Z" button, a registration and virtualization dialog is displayed. If the target device has never been connected before, the only possible action is to register the device. The registration procedure is necessary to retrieve enough device information for allowing the Zerynth backend to build a virtual machine for the device. Once registration has been performed, the user is given the option to create a Virtual Machine for the registered device. Here the user can select one of different virtual machines compatible with the target device. Finally, the created Virtual Machine can be virtualized (i.e. burned on the device). Some devices cannot be recognized automatically; for these devices, the dialog provides some more options to be specified before the actual registration/virtualization can take place. Finally, a device can always be registered again with the dedicated dialog button.
+* **Redeem licenses**: upon registering a new device the option to acquire a license is given; the redeem process requires inserting a special code, often provided by the hardware vendor for Zerynth powered devices. The inserted code will transfer into the user account a certain amount of virtual machines licenses.
+* **Serial Console**: by clicking the rightmost button,the serial port of the target device can be opened and the output inspected.
+* **Device information and PinMap**: the central buttons can be used to retrieve device information (expecially the serial port and/or the mounted volume) and to show the device pinmap. Please refer to the :ref:`Programming Guide <ZERYNTHprog>` section for more details on how pin names and functionalities are organized in Zerynth.
+
+.. figure:: /custom/img/zredeem.png
+   :align: center
+   :figwidth: 100% 
+   :alt: Zerynth Registration and Redeem
 
 
 When a serial console is opened, the port parameters are automatically configured to the defaults of the selected device. The baud rate for a device is displayed during bytecode upload. To open a serial port configured with a non default baudrate, a serial terminal like Putty should be used. It is important to close the serial terminal before trying to uplink or open a Zerynth serial console, because concurrent serial port usage from different programs is not allowed.
@@ -81,6 +89,8 @@ When a serial console is opened, the port parameters are automatically configure
 
 
 The :ref:`Getting Started <gettingstarted>` section has a dedicated tutorial on how to manage devices.
+
+.. _zerynth-studio-device-advanced:
 
 Advanced Device Widget
 ----------------------
@@ -129,10 +139,36 @@ In advanced mode, the behaviour of the "Z" button, console button and uplink but
 * the "Z" button functions will be perfomed using the specified port or disk; if a probe is specified, it will take priority and all registrations and virtualizations will be performed via JTAG/SWD (for the devices supporting the feature)
 * the uplink button will use the configured port; again, if a probe is specified, it will take priority and the uplinking will be performed via JTAG/SWD
 
+Furthermore :ref:`Project Debugging <zerynth-studio-debugger>` is enabled. 
+
 Device configurations  and the device management mode are remembered across Studio restarts (but not across different development machines). Device configurations can be deleted and modified. Some systems assign different devices parameters upon device reconnection (i.e. a different serial port): such changes are not automatically recognized in advanced mode and must be reconfigured manually!
 
 
+.. _zerynth-studio-debugger:
 
+C Code Debugger
+---------------
+
+Zerynth Studio integrates the powerful `gdbgui <https://gdbgui.com/>`_ as a `GDB <https://www.gnu.org/software/gdb/>`_ Front End to allow debugging with ease the C component of hybrid C/Python projects.
+
+Clicking the Debug Session button, current project is uplinked via JTAG/SWD and a gdbgui window is open.
+
+.. figure:: /custom/img/zstudio-debug-session-start.png
+   :align: center
+   :figwidth: 90%
+   :alt: Zerynth Studio Start Debug Session
+
+Inside gdbgui it is possible to place breakpoints on and inside C functions to control execution flow, inspect MCU memory and C variable values.
+
+.. figure:: /custom/img/zstudio-debug-session-gdb.png
+   :align: center
+   :figwidth: 90%
+   :alt: Zerynth Studio gdbgui window
+
+.. figure:: /custom/img/zstudio-debug-session-breakpoints.png
+   :align: center
+   :figwidth: 90%
+   :alt: Zerynth Studio gdbgui window
 
 .. _zerynth-studio-profile:
 
@@ -463,5 +499,6 @@ In the Zerynth Studio Preferences Menu, following options are available:
 * **Forget all devices**: Forgets all devices stored in local database (virtual machines are not involved);
 * **Show messages**: Shows the list of all received messages;
 * **Check Updates**: Manual trigger to check if new updates are available.
+* **Redeem Licenses**: Open up a dialog where redeemable codes can be turned into virtual machine licenses.
 
 .. note:: the "Forget all devices" option is needed when there are one or more errors in recognizing devices connected to the machine. Confirming this command local device database will be cleaned.

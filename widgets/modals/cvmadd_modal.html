@@ -3,7 +3,7 @@
 var CVMAddModal = {
   data: [],
   __fill: function(data){
-    var header = "<tr style=\"background-color:#468c8c;color:#ffffff\"><th>#</th><th>Name</th><th>Chip</th><th>Target</th></tr>"
+    var header = "<tr style=\"background-color:var(--zcolor);color:#ffffff\"><th>#</th><th>Name</th><th>Chip</th><th>Target</th></tr>"
     ZTC.cvm_original()
         .then((devs)=>{
             $("#cvmadd_modal_table").html(header+$.templates("#cvmadd_modal_row").render(devs))

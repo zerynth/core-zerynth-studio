@@ -1,7 +1,7 @@
 
 
 var Bus = require('eventbusjs');
-                
+
 var Store = {
     projects: {
         current: null,
@@ -69,6 +69,12 @@ var Store = {
         Store.docs.current = doc
         Bus.dispatch("document_ready",App,doc)
     },
+    remove_project_config: function(prj){
+        var doc = _.find(Store.docs.items,(d)=>{return d.file==prj.cfgfile})
+        if (doc){
+            Store.remove_document(doc)
+        }
+    },
     add_document: function(prj,file,make_current,toline){
         var path=require("path")
         var ilen = Store.docs.items.length
@@ -104,7 +110,7 @@ var Store = {
         doc.toline=toline
         if(make_current){
             Store.docs.current = doc
-        }        
+        }
         //if(ilen<Store.docs.items.length) Bus.dispatch("document_new")
         //else if(make_current) Bus.dispatch("document_changed")
         Bus.dispatch("document_ready",App,Store.docs.current)
@@ -137,7 +143,7 @@ var Store = {
                         _.each(data,function(v,k,l){
                             if (k && k%80==0){
                                 line+="\n"
-                            } 
+                            }
                             line+=v.toString(16)+" "
                         })
                         doc.edoc.setValue(line)
@@ -166,7 +172,7 @@ var Store = {
         }
         Bus.dispatch("document_changed")
 
-    },  
+    },
     watch_project: function(prj){
         if (prj) prj.set_watcher((p,f)=>{Bus.dispatch("project_change")})
     },
@@ -324,13 +330,14 @@ var Store = {
         })
     },
     open_window: function(url,options){
+        var cid=url
         var cw = Store.windows[url]
         if (!cw) {
             console.log("Opening",url)
             var gg = nw.Window.open(url,{
                 new_instance:false
             },(cwin)=>{
-                console.log(gg)
+                console.log("cwin")
                 console.log(cwin)
                 cwin.on("loaded",()=>{
                     Store.windows[cid]={

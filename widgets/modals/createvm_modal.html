@@ -58,7 +58,6 @@ var CreateVMModal = {
       $("#create_vm_title").html("Create VM for "+data.dev.name+" (unknown id)")
     }
 
-    
     //$("#createvm_modal_table").html($.templates("#createvm_modal_row").render({ patches:patches, changelog:vmdata.changelog,vms:vms}))
 
     var new_patches = _.map(patches,(elem)=>{
@@ -106,7 +105,18 @@ var CreateVMModal = {
     var html=""
     var cc = CreateVMModal.changelog[patch_name]
     var vv = _.filter(CreateVMModal.vms,(item)=>{return item.patch==patch_name})
-    html=$.templates("#createvm_modal_table2").render({patch:patch_name,changelog:cc,vms:vv,patches:CreateVMModal.new_patches})
+    var ordvms = []
+    for (var rtos in ZConf.rtoses) {
+      var listvm = _.filter(vv, (item)=>{
+            return item.rtos==ZConf.rtoses[rtos]
+          })
+      if (listvm.length > 0){
+        listvm = _.sortBy(listvm,"features")
+        ordvms.push({"rtos":ZConf.rtoses[rtos],"vms":listvm})
+      }
+    }
+    ordvms = _.sortBy(ordvms,"rtos").reverse()
+    html=$.templates("#createvm_modal_table2").render({patch:patch_name,changelog:cc,vv:ordvms,patches:CreateVMModal.new_patches})
     $("#createvm_modal_div").html(html)
   },
   select: function(row){
@@ -152,20 +162,29 @@ var CreateVMModal = {
       </div>
     <hr>
     {{/if}}
-    <p>Select one of the available configurations</p>
-    <table class="table table-striped table-bordered" style="max-height: 600px;padding:4px">
-    <tr style="background-color:#468c8c;color:#ffffff"><th style="width:5%">#</th><th style="width:30%">Configuration</th><th style="width:15%">RTOS</th><th style="width:30%">Features</th><th style="width:10%">License</th><th style="width:10%">Available</th><tr>
-    {{for vms ~cur=patch}}
-            <tr onclick="CreateVMModal.select($(this))">
-              <td><input type="radio" value="{{:num}}" name="vms" {{if index==0}}checked{{/if}}></td>
-              <td>{{:title}} ({{:~cur.toUpperCase()}})</td>
-              <td>{{:rtos}}</td>
-              <td>{{:features}}</td>
-              <td>{{:pro[0].toUpperCase()+pro.substr(1)}}</td>
-              <td style="text-align:center"><i class="glyphicon glyphicon-{{if available}}ok{{else}}remove{{/if}}" style="color:{{if available}}#3c763d{{else}}#a94442{{/if}}"></i></td>
-            </tr>
+    {{for vv ~cur=patch}}
+      <p>Select one of the available configurations for {{:rtos}}</p>
+      <table class="table table-striped table-bordered" style="max-height: 600px;padding:4px">
+        <tr style="background-color:#468c8c;color:#ffffff">
+          <th style="width:5%">#</th>
+          <th style="width:30%">Configuration</th>
+          <th style="width:15%">RTOS</th>
+          <th style="width:30%">Features</th>
+          <th style="width:10%">License</th>
+          <th style="width:10%">Available</th>
+        <tr>
+        {{for vms ~pp=~cur}}
+          <tr onclick="CreateVMModal.select($(this))">
+            <td><input type="radio" value="{{:num}}" name="vms" {{if index==0}}checked{{/if}}></td>
+            <td>{{:title}} ({{:~pp.toUpperCase()}})</td>
+            <td>{{:rtos}}</td>
+            <td>{{:features}}</td>
+            <td>{{:pro[0].toUpperCase()+pro.substr(1)}}</td>
+            <td style="text-align:center"><i class="glyphicon glyphicon-{{if available}}ok{{else}}remove{{/if}}" style="color:{{if available}}#3c763d{{else}}#a94442{{/if}}"></i></td>
+          </tr>
+        {{/for}}
+      </table>
     {{/for}}
-    </table>
 </script>
 <style>
 #createvm_modal_table td,

@@ -4,15 +4,17 @@ var VirtualizeModal = {
   __fill: function(data){
     //data must have at least one element, check somewhere else before calling
     $("#virtualize_alert").hide()
-    var picker = $("#vms_list")
-    var header = '<tr style="background-color:#468c8c;color:#ffffff"><th>#</th><th>Device</th><th>RTOS</th><th>License</th><th>Features</th><th>Patch</th><tr>'
-    console.log(data)
+    var picker = $("#vm_div")
 
     data = _.sortBy(data,"features")
     data = _.map(data,(v,k,l)=>{
       var dev = _.find(ZDevices.targets,(item)=>{
             return item.target==v.target
           })
+      var regex_uuid = /\([A-Z,a-z,0-9,\-,\_,\+]*\)/g
+      if (v.name.match(regex_uuid)){
+        v.name = v.name.replace(regex_uuid,'')
+      }
       return {
         chipid:v.chipid,
         uuid:v.uuid,
@@ -21,7 +23,7 @@ var VirtualizeModal = {
         patch:v.patch,
         rtos: ZConf.rtoses[v.rtos],
         features: _.map(v.features,(vv,kk,ll)=>{ return ZConf.features[vv]}).join(", ") || "---",
-        devname: v.name //_.find(ZDevices.targets,(item)=>{ return item.target==v.target }).name
+        devname: v.name, /*? (v.name, _.find(ZDevices.targets,(item)=>{ return item.target==v.target }).name)*/
       }
     })
     if (data[0].chipid){
@@ -29,7 +31,19 @@ var VirtualizeModal = {
     } else {
       $("#vTitle").html("Virtualize "+data[0].devname+" (unknown id)")
     }
-    picker.html(header+$.templates("#virtualize_modal_row").render(data))
+    var dd = []
+    for (var rtos in ZConf.rtoses) {
+      var vms = _.filter(data, (item)=>{
+            return item.rtos==ZConf.rtoses[rtos]
+          })
+      if (vms.length > 0){
+        vms = _.sortBy(vms,"features")
+        dd.push({"rtos":ZConf.rtoses[rtos],"vms":vms})
+      }
+    }
+    dd = _.sortBy(dd,"rtos").reverse()
+    console.log(dd)
+    picker.html($.templates("#virtualize_modal_tables").render(dd))
   },
   __show: function(){
     $("#virtualize_modal").modal()
@@ -91,15 +105,28 @@ var VirtualizeModal = {
 
 </script>
 </script>
-<script id="virtualize_modal_row" type="text/x-jsrender">
-<tr onclick="VirtualizeModal.select($(this))">
-  <td><input type="radio" value="{{:uuid}}" name="vms" {{if index==0}}checked{{/if}}></td>
-  <td>{{:devname}}</td>
-  <td>{{:rtos}}</td>
-  <td>{{if features == '---'}}Starter{{else}}Premium{{/if}}</td>
-  <td>{{:features}}</td>
-  <td>{{:patch.toUpperCase()}}</td>  
-</tr>
+<script id="virtualize_modal_tables" type="text/x-jsrender">
+<p>Select a Virtual Machine with {{:rtos}}</p>
+<table class="table table-striped table-bordered" id="vms_list" style="max-height: 600px;padding:4px">
+  <tr style="background-color:var(--zcolor);color:#ffffff">
+    <th style="width:5%">#</th>
+    <th style="width:25%">Device</th>
+    <th style="width:15%">RTOS</th>
+    <th style="width:10%">License</th>
+    <th style="width:35%">Features</th>
+    <th style="width:10%">Patch</th>
+  <tr>
+  {{for vms}}
+    <tr onclick="VirtualizeModal.select($(this))">
+      <td><input type="radio" value="{{:uuid}}" name="vms" {{if index==0}}checked{{/if}}></td>
+      <td>{{:devname}}</td>
+      <td>{{:rtos}}</td>
+      <td>{{if features == '---'}}Starter{{else}}Premium{{/if}}</td>
+      <td>{{:features}}</td>
+      <td>{{:patch.toUpperCase()}}</td>
+    </tr>
+  {{/for}}  
+</table>
 </script>
 <style>
 #virtualize_modal_table td,
@@ -109,7 +136,7 @@ var VirtualizeModal = {
 </style>
 
 <div class="modal fade" id="virtualize_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-dialog" style="min-width: 50%;">
+  <div class="modal-dialog" style="min-width: 60%;">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
@@ -118,8 +145,7 @@ var VirtualizeModal = {
         <h4 class="modal-title" id="vTitle">Virtualize</h4>
       </div>
       <div class="modal-body">
-        <p>Select a Virtual Machine</p>
-        <table class="table table-striped table-bordered" id="vms_list" style="max-height: 600px;padding:4px"></table>
+        <div id="vm_div"></div>
         <div class="alert alert-danger" id="virtualize_alert" style="display:none">
           <span class="pficon pficon-error-circle-o"></span><p id="virtualize_error"></p>
         </div>

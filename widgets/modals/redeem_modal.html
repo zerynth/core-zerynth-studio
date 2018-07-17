@@ -1,0 +1,63 @@
+<script>
+
+var RedeemModal = {
+  __fill: function(data){
+    $("#redeem_alert").hide()
+    $("#redeem_waiting").hide()
+  },
+  __show: function(){
+    $("#redeem_alert").hide()
+    $("#redeem_waiting").hide()
+    $("#redeem_modal").modal()
+  },
+  redeem: function(){
+    var code = $.trim($("#redeem_code").val())
+    if(!code) return
+    $("#redeem_waiting").show()
+    ZTC.redeem_code(code)
+          .then((asset)=>{
+            $("#redeem_waiting").hide()
+            var what = (asset["target"]=="*") ? ("for any device"):("for devices of type "+asset["target"])
+            bootbox.alert("Code redeemed! You now have "+asset["value"]+" "+( asset["pro"] ? "premium":"starter")+" virtual machine(s) "+what,()=>{
+                $("#redeem_modal").modal("hide")
+            })
+          })
+          .catch((err)=>{
+              console.log(err)
+              $("#redeem_waiting").hide()
+              bootbox.alert("Ouch! Can't redeem code...")
+          })
+  }
+
+
+}
+
+</script>
+<div class="modal fade" id="redeem_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">Redeem Licenses</h4>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" onsubmit="return false">
+          <div class="form-group">
+            <label class="col-sm-3 control-label" for="textInput-modal-markup">Redeem your license</label>
+            <div class="col-sm-9">
+              <input type="text" id="redeem_code" class="form-control" placeholder="CC-XXXXX-YYYYY-ZZZZZ-WWWWW"></div>
+          </div>
+        </form>
+        <div id="redeem_waiting" style="display:none;text-align:center">
+            <p><span class="spinner spinner-xs spinner-inline"></span>Redeeming code...</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="RedeemModal.redeem()">Go</button>
+      </div>
+    </div>
+  </div>
+</div>

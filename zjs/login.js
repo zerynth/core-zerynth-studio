@@ -8,6 +8,7 @@ var login_timeout_stop=true;
 function login_switch(where){
 
     login_type=where;
+    $("#LoginModalError").html("")
     if (where==0) {
         //go to login view
         $("#LoginModalSignup").hide()
@@ -58,6 +59,8 @@ function login_go(){
     if (login_window) return;
     //TODO: call ajax for checking
     if (login_type==0) {
+        $("#login_spinner_0").show()
+        $("#LoginModalError").html("")
         $.ajax(ZConf.oauth.zerynth,{
             method:"GET",
             headers: {
@@ -66,7 +69,10 @@ function login_go(){
             success: function(data,status,xhr){
                 console.log("Success")
                 console.log(data.code)
+                $("#login_spinner_0").hide()
+
                 if (data.code==404){
+                    $("#login_spinner_0").hide()
                     $("#LoginModalError").html("No such user")
                 } else  if(data.code==200){
                     $("#LoginModalError").html("Logged!")
@@ -82,6 +88,7 @@ function login_go(){
                 } else  $("#LoginModalError").html("Unexpected error")
             },
             error: function(xhr,status,err){
+                $("#login_spinner_0").hide()
                 $("#LoginModalError").html("Network error")
             }
         })
@@ -112,14 +119,17 @@ function login_go(){
             $("#LoginModalError").html("Bad Nick Name!"); 
             return false
         }
-        if(!email || !email.match(/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/)){
+        if(!email){
             $("#LoginModalError").html("Bad Email!"); 
             return false
         }
 
+        $("#LoginModalError").html("")
+        $("#login_spinner_0").show()
         $.ajax(ZConf.oauth.zerynth,{
             method:"POST",
             success: function(data,status,xhr){
+                $("#login_spinner_0").hide()
                 if (data.code==404){
                     $("#LoginModalError").html("No such user")
                 } else  if(data.code==200){
@@ -137,6 +147,7 @@ function login_go(){
                 } else  $("#LoginModalError").html(data.message)
             },
             error: function(xhr,status,err){
+                $("#login_spinner_0").hide()
                 $("#LoginModalError").html("Network error")
             },
             dataType   : 'json',
