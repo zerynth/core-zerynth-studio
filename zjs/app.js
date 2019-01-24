@@ -145,6 +145,7 @@ var App = {
             submenu.append(new nw.MenuItem({label:"Check Updates",click:()=>{App._update_checker()}}))
             submenu.append(new nw.MenuItem({type:"separator"}))
             submenu.append(new nw.MenuItem({label:"Redeem Licenses",click:()=>{Dialogs.modal("RedeemModal")}}))
+            submenu.append(new nw.MenuItem({label:"Redeem VMs",click:()=>{App.own_vm()}}))
             menu.append(new nw.MenuItem({label:"Preferences",submenu:submenu}))
             App.update_uninst_menu()
 
@@ -806,6 +807,27 @@ var App = {
                 if (cb) cb()
             })
     },
+    own_vm:function(){
+        if (!App.check_actions()) return
+        var tgt = ZDevices.selected
+        if (!tgt || !tgt.target) {
+            ZNotify.alert("Select a target device first!","No device selected","error")
+            return
+        }
+        var console_was_opened = false
+        if (tgt.alias in Store.consoles){
+            console_was_opened = true
+            Store.consoles[tgt.alias].win.close()
+        }
+        ZNotify.wait("Redeeming VM...")
+        ZTC.own_vm(tgt)
+            .then((data)=>{
+                ZNotify.done()
+            })
+            .catch((err)=>{
+                ZNotify.done(err)
+            })
+    },
     open_console: function(){
         var dev = ZDevices.selected
         if (!dev || dev.optkey.startsWith("virt:") || !dev.port){
@@ -1271,17 +1293,32 @@ var App = {
             }
             var infile = Z.path.join(ZConf.tempdir,"zstudio.vbo")
             var started = false
+            var pinger
             ZTC.command(["debugger","start",ZDevices.selected.target,ZDevices.selected.probe,"--bytecode",infile],{
                 background:true,
-                stderr: (line)=>{
-                    if (line.includes("Running on http://")){
-                        Store.debugging=true
-                        started=true
-                        Store.open_window("http://127.0.0.1:5000/",{close_callback: ()=>{
-                            console.log("CLOSING!")
-                            ZTC.command(["debugger","stop"])
-                            Store.debugging=false
-                        }})
+                stdout: (line)=>{
+                    console.log(line)
+                    if (line.includes("**Starting GDB GUI**")){
+
+                        pinger=setInterval(()=>{
+                            $.get("http://127.0.0.1:5000",(data,status)=>{
+                                console.log("Pinger!")
+                                console.log(status)
+                                if (status=="success"){
+                                    //stop timer, open window
+                                    clearInterval(pinger)
+                                    Store.debugging=true
+                                    started=true
+                                    Z.log("Opening GDB Gui window...")
+                                    Store.open_window("http://127.0.0.1:5000/",{close_callback: ()=>{
+                                        console.log("CLOSING!")
+                                        ZTC.command(["debugger","stop"])
+                                        Store.debugging=false
+                                    }})
+                                }
+                            })
+                        },1000)
+
                     } else if(!started) Z.log(line)
                 },
                 closecb: (ok)=>{

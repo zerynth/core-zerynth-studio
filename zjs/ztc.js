@@ -222,6 +222,49 @@ var ZTC = {
             })
         })
     },
+    own_vm:function(dev){
+        return new Promise((resolve,reject)=>{
+            if (!dev.manual) {
+                ZTC.command(["vm","own_alias",dev.alias],{
+                    stdout: (line)=>{
+                        Z.log(line)
+                        if (line.includes("reset the device")){
+                            ZNotify.alert_timeout("Please Reset the Device!","Device Reset needed","info",5000)
+                        }
+                    }
+                }).then(()=>{
+                    resolve()
+                }).catch((err)=>{
+                    reject(err)
+                })
+            } else {
+                //manual devices
+                if (dev.probe) {
+                    ZTC.command(["vm","own_by_probe",dev.target,dev.probe])
+                    .then(()=>{
+                        resolve()
+                    }).catch((err)=>{
+                        reject(err)
+                    })
+                } else {
+                    ZTC.command(["vm","own_target",dev.target,"--spec","port:"+dev.port],{
+                        stdout: (line)=>{
+                            Z.log(line)
+                            if (line.includes("reset the device")){
+                                ZNotify.alert_timeout("Please Reset the Device!","Device Reset needed","info",5000)
+                            }
+                        }
+                    })
+                    .then(()=>{
+                        resolve()
+                    }).catch((err)=>{
+                        reject(err)
+                    })
+                }
+
+            }
+        })
+    },
     uplink_project:function(prj,dev){
         return new Promise((resolve,reject)=>{
             var infile = Z.path.join(ZConf.tempdir,"zstudio.vbo")
@@ -601,6 +644,18 @@ var ZTC = {
     prj_git_clone: function(prjpath,projuid){
         return new Promise((resolve,reject)=>{
             var cmd = ["project","git_clone",projuid,prjpath]
+            ZTC.command(cmd)
+                .then(()=>{
+                    resolve()
+                })
+                .catch((err)=>{
+                    reject(err)
+                })
+        })
+    },
+    prj_git_clone_external: function(title,url,prjpath){
+        return new Promise((resolve,reject)=>{
+            var cmd = ["project","git_clone_external",url,prjpath,"--title",title]
             ZTC.command(cmd)
                 .then(()=>{
                     resolve()

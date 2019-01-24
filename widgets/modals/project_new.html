@@ -18,6 +18,8 @@ var ProjectNewModal = {
     var pntitle = $("#project_new_title")
     var pnwkdir = $("#project_new_workingdir")
     var pndesc = $("#project_new_description")
+    var pngithub = $("#project_new_github")
+    pngithub.val("")
     pntitle.unbind("change").unbind("keyup")
     pntitle.val(title);
     pnwkdir.val(ProjectNewModal.working_dir);
@@ -42,24 +44,44 @@ var ProjectNewModal = {
     var description = $("#project_new_description").val()
     var clone_from = $("#project_new_from").val()
     var prj = new Project($("#project_new_workingdir").val())
+    var github = $("#project_new_github").val()
     $("#project_new_modal alert").hide()
     ZNotify.wait("Creating project...")
-    prj.create(title,description,clone_from).then(
-      (project)=>{
-        $("#project_new_modal").modal("toggle")
-        prj.open()
-          .then(()=>{
-            ZNotify.done()
-            Store.add_project(project,true)
-            LeftBar.project()
-          }).catch((err)=>{
-            ZNotify.done()
+    if (github) {
+        ZTC.prj_git_clone_external(title,github,prj.path)
+            .then(()=>{
+                $("#project_new_modal").modal("toggle")
+                prj.open()
+                  .then(()=>{
+                    ZNotify.done()
+                    Store.add_project(prj,true)
+                    LeftBar.project()
+                  }).catch((err)=>{
+                    ZNotify.done()
+                  })
+            })
+            .catch((err)=>{
+                ZNotify.modal_error("project_new", err)
+                ZNotify.done("Error")
+            })
+    } else {
+        prj.create(title,description,clone_from).then(
+          (project)=>{
+            $("#project_new_modal").modal("toggle")
+            prj.open()
+              .then(()=>{
+                ZNotify.done()
+                Store.add_project(project,true)
+                LeftBar.project()
+              }).catch((err)=>{
+                ZNotify.done()
+              })
+        }).catch(
+          (err)=>{
+            ZNotify.modal_error("project_new", err)
+            ZNotify.done("Error")
           })
-    }).catch(
-      (err)=>{
-        ZNotify.modal_error("project_new", err)
-        ZNotify.done("Error")
-      })
+    }
   },
   choose_wkdir: function(){
     Dialogs.open_dir()
@@ -85,7 +107,7 @@ var ProjectNewModal = {
           <div class="form-group">
             <label class="col-sm-3 control-label" for="textInput-modal-markup">Title</label>
             <div class="col-sm-9">
-              <input type="text" id="project_new_title" class="form-control"></div>
+              <input type="text" id="project_new_title" class="form-control" ></div>
           </div>
           <div class="form-group">
             <label class="col-sm-3 control-label" for="textInput2-modal-markup">Description</label>
@@ -104,6 +126,15 @@ var ProjectNewModal = {
               </div>
             </div>
           </div>
+
+          <div class="form-group has-feedback">
+            <label class="col-sm-3 control-label" for="textInput2-modal-markup">Clone from Github</label>
+            <div class="col-sm-9">
+              <input type="text" id="project_new_github" class="form-control" placeholder="Optional Github url to clone from">
+              <span class="fa fa-github fa-fw fa-2x form-control-feedback"></span>
+            </div>
+          </div>
+
         </form>
         <input type="text" id="project_new_from" class="form-control" readonly style="display:none">
         <div class="alert alert-danger" id="project_new_alert" style="display:none">
