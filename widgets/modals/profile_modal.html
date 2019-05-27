@@ -38,9 +38,14 @@ var ProfileModal = {
         var dev = _.find(ZDevices.targets,(item)=>{
             return item.target==k2
           })
-        yy.target = dev.name;
+        if (dev){
+          yy.target = dev.name;
+        }
+        else {
+          yy.target = k2
+        }
         if (k in v2) {
-          yy.consumed = v2[k].starter
+          yy.consumed = v2[k].premium
         }
         return yy
       }),(item)=>{return item.consumed});
@@ -58,7 +63,12 @@ var ProfileModal = {
         var dev = _.find(ZDevices.targets,(item)=>{
             return item.target==k2
           })
-        yy.target = dev.name;
+        if (dev){
+          yy.target = dev.name;
+        }
+        else {
+          yy.target = k2
+        }
         if (k in v2) {
           yy.consumed = v2[k].premium
         }

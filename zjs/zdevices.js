@@ -171,6 +171,12 @@ var ZDevices = {
             })
             .catch((err)=>{console.log("erase flash not OK:"+err)})
     },
+    put_mode: function(dev, mode){
+        ZTC.command(["device","put_mode",dev.alias,mode])
+            .then(()=>{
+            })
+            .catch((err)=>{console.log("error putting in selected mode:"+err)})
+    },
     add_virtual: function(targets){
         ZDevices.virtual_list=[]
         // var toadd= _.filter(targets,(item)=>{

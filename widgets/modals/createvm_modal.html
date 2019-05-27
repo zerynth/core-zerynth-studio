@@ -6,6 +6,7 @@ var CreateVMModal = {
   patches: null,
   changelog: null,
   callback: null,
+  exclusivity: false,
   __fill: function(data){
     console.log(data) 
     var vmdata = data.vms
@@ -14,6 +15,7 @@ var CreateVMModal = {
       CreateVMModal.vms=null
       return
     }
+    CreateVMModal.exclusivity = false
     var vms = []
 
     vm_number = 0
@@ -46,8 +48,14 @@ var CreateVMModal = {
             pro:license,
             index:cnt,
             num:vm_number,
-            available: available
+            available: available,
+            exclusive: v.exclusive,
+            exclusivity: v.exclusivity
           })
+          if (v.exclusive || v.exclusivity) {
+            CreateVMModal.exclusivity = v.exclusivity          
+          }
+
           cnt++
           vm_number++
         })
@@ -88,6 +96,16 @@ var CreateVMModal = {
   __hide: function(){
     $("#createvm_modal").modal("hide")
   },
+  parse_accounts: function(msg) {
+      var opos = msg.lastIndexOf("[")
+      var cpos = msg.lastIndexOf("]")
+      var accs = msg.substring(opos+1,cpos)
+      var lastcomma = accs.lastIndexOf(",")
+      if (lastcomma > 0) {
+        accs = accs.substring(0,lastcomma) + " or "+ accs.substring(lastcomma+1)
+      }
+      return accs
+  },
   run_create: function(vm,dev){
     var fn = (dev.manual) ? (ZTC.vmcreate_by_uid):(ZTC.vmcreate)
     fn(vm,dev)
@@ -98,7 +116,19 @@ var CreateVMModal = {
         App.upd_profile()
       })
       .catch((err)=>{
-        CreateVMModal.__hide()
+        Z.log(""+err)
+        if (err.includes("ZE100")) {
+            //TODO: parse err to extract required accounts
+            accstring = CreateVMModal.parse_accounts(err)
+
+            //hide everything
+            $(".modal").modal("hide")
+            //disable callback
+            CreateVMModal.callback=null
+            ZNotify.alert("This VM requires a "+accstring+" account! Please logout (Preferences => <a href=\"javascript:App.logout()\">Logout</a>) and sign-in with a "+accstring+" account.<br><br>If you don't have an account already, you can signup directly from the Zerynth Login page; remember to use your current email ["+Store.user_email()+"] in order to merge the accounts!","Exclusive VM","warning")
+        } else {
+            CreateVMModal.__hide()
+        }
       })
   },
   display_patch: function(patch_name){
@@ -116,7 +146,12 @@ var CreateVMModal = {
       }
     }
     ordvms = _.sortBy(ordvms,"rtos").reverse()
-    html=$.templates("#createvm_modal_table2").render({patch:patch_name,changelog:cc,vv:ordvms,patches:CreateVMModal.new_patches})
+    html=$.templates("#createvm_modal_table2").render({
+        patch:patch_name,
+        changelog:cc,
+        vv:ordvms,
+        patches:CreateVMModal.new_patches,
+        exclusivity:CreateVMModal.exclusivity})
     $("#createvm_modal_div").html(html)
   },
   select: function(row){
@@ -149,6 +184,9 @@ var CreateVMModal = {
     <div style="font-size:15px;text-align: center">Create a Virtual Machine</div>
     <div style="font-size:15px;text-align: center">{{:patch.toUpperCase()}} RELEASE - Changelog: {{:changelog}}</div>
     <hr>
+    {{if exclusivity}}
+      <div style="font-size:15px;text-align:center;margin-bottom:6px"><span class="label label-primary">The VMs are available for {{:exclusivity}} users only</span></div>
+    {{/if}}
     {{if patches.length>1}}
       <div style="font-size:15px;text-align: center" id="createvm_modal_ptch">Available patches:
         <br>

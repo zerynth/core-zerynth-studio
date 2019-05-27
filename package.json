@@ -1,15 +1,16 @@
 {
-    "dependencies": {
-        "core.zerynth.toolchain": "r2.2.0",
-        "sys.zerynth.browser": "r2.2.0"
-    },
-    "description": "Zerynth Studio",
-    "fullname": "core.zerynth.studio",
-    "git_pointer": "zerynth://zerynth-core/zerynth-studio",
-    "keywords": [],
-    "repo": "official",
-    "skinnable": true,
-    "title": "Zerynth Studio",
-    "version": "r2.2.0",
-    "whatsnew": ""
-}
+        "dependencies": {
+            "core.zerynth.toolchain": "r2.2.0",
+            "sys.zerynth.browser": "r2.2.0"
+        },
+        "description": "Zerynth Studio",
+        "fullname": "core.zerynth.studio",
+        "git_pointer": "zerynth://zerynth-core/zerynth-studio",
+        "keywords": [],
+        "repo": "official",
+        "skinnable": true,
+        "title": "Zerynth Studio",
+        "version": "r2.2.0",
+        "whatsnew": ""
+ }
+

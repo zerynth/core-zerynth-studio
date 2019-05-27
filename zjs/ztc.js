@@ -290,7 +290,7 @@ var ZTC = {
                             ZTC.link(inspection.vmuid,infile,0,0,outfile,true)
                                 .then(()=>{
                                     //now uplink by probe!
-                                    ZTC.command(["uplink_by_probe",dev.target,dev.probe,outfile])
+                                    ZTC.command(["uplink_by_probe",dev.target,dev.probe,outfile,"--layout-root",prj.path])
                                     .then(()=>{
                                         resolve()
                                     }).catch((err)=>{
@@ -481,12 +481,17 @@ var ZTC = {
                 cmd.push("--custom_target")
                 cmd.push(dev.target)
             }
-            ZTC.command(cmd)
+            var last_err = null
+            ZTC.command(cmd,{
+                stderr: (line)=>{
+                   last_err = line
+                }
+            })
                 .then(()=>{
                     resolve()
                 })
                 .catch((err)=>{
-                    reject(err)
+                    reject((last_err!= null) ? last_err:err)
                 })
         })
     },
@@ -498,12 +503,17 @@ var ZTC = {
                 cmd.push("--custom_target")
                 cmd.push(dev.target)
             }
-            ZTC.command(cmd)
+            var last_err = null
+            ZTC.command(cmd,{
+                stderr: (line)=>{
+                   last_err = line
+                }
+            })
                 .then(()=>{
                     resolve()
                 })
                 .catch((err)=>{
-                    reject(err)
+                    reject((last_err!= null) ? last_err:err)
                 })
         })
     },
@@ -1188,5 +1198,28 @@ var ZTC = {
                     reject(err)
                 })
         })
+    },
+    logout: function(){
+        return new Promise((resolve,reject)=>{
+            var cmd = ["logout"]
+            var res;
+            ZTC.command(cmd,{
+                stdout: (line)=>{
+                    console.log(line)
+                    try{
+                        res = JSON.parse(line)
+                    } catch(err){
+                        console.log(err) //ignore [info]
+                    }
+                }
+            })
+                .then(()=>{
+                    resolve(res)
+                })
+                .catch((err)=>{
+                    reject(err)
+                })
+        })
+
     }
 }

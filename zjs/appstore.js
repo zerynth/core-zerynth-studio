@@ -119,6 +119,13 @@ var Store = {
         Store.profile = prof
         Bus.dispatch("profile_changed")
     },
+    user_email: function(){
+        if (Store.profile) {
+            return Store.profile.email
+        } else {
+            return "unknown"
+        }
+    },
     read_document: function(doc){
         return new Promise(function(resolve,reject){
             var fs=require("fs")

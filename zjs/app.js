@@ -146,6 +146,9 @@ var App = {
             submenu.append(new nw.MenuItem({type:"separator"}))
             submenu.append(new nw.MenuItem({label:"Redeem Licenses",click:()=>{Dialogs.modal("RedeemModal")}}))
             submenu.append(new nw.MenuItem({label:"Redeem VMs",click:()=>{App.own_vm()}}))
+            submenu.append(new nw.MenuItem({type:"separator"}))
+            submenu.append(new nw.MenuItem({label:"Logout",click:()=>{App.logout()}}))
+            submenu.append(new nw.MenuItem({label:"Quit",click:()=>{App.quit()}}))
             menu.append(new nw.MenuItem({label:"Preferences",submenu:submenu}))
             App.update_uninst_menu()
 
@@ -275,6 +278,22 @@ var App = {
                     Z.log("Retrying authorization...")
                 })
         }
+    },
+    logout : function(){
+        ZTC.logout()
+            .then(()=>{
+                App.quit()
+            })
+            .catch((err)=>{
+                Z.log("Oops, can't logout!")
+            })
+    },
+    quit: function(){
+        Z.async.eachSeries(Store.commands,(c,cb)=>{
+            ZTC.kill(c.pid).then(()=>{cb()}).catch(()=>{cb()})
+        },()=>{
+            nw.App.closeAllWindows()
+        })
     },
     startupwin: function(){
         $('#splashscreen').hide();

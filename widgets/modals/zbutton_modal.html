@@ -201,7 +201,11 @@ var ZButtonModal = {
             ZTC.vmlistcreated(ZButtonModal.dev.remote_id)
               .then((my_vms)=>{
                 ZButtonModal.__hide()
-                Dialogs.modal("CreateVMModal",{dev:ZButtonModal.dev,vms:vms, my_vms:my_vms,callback:() =>{ZButtonModal.__show(); ZButtonModal.adjust()}})
+                Dialogs.modal("CreateVMModal",{
+                    dev:ZButtonModal.dev,
+                    vms:vms, 
+                    my_vms:my_vms,
+                    callback:() =>{ZButtonModal.__show(); ZButtonModal.adjust()}})
               })
               .catch((err)=>{
                 ZButtonModal.__hide()

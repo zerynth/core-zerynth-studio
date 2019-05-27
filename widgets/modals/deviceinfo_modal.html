@@ -10,6 +10,15 @@ var DeviceInfoModal = {
     else{
       $("#eraseflash").hide();
     }
+    if (data.operating_modes) {
+      if ($("#deviceinfo_modal .putmode-btns-span button").length == 0)
+        $.each(data.operating_modes, function(index, mode) {
+          $("#deviceinfo_modal .putmode-btns-span").append($('<button type="button" class="btn btn-danger" onclick="DeviceInfoModal.put_mode(\'' + mode + '\')">' + mode.toUpperCase() + ' mode</button>'));
+        })
+    }
+    else {
+      $("#deviceinfo_modal .putmode-btns-span").html("");
+    }
     $("#deviceinfo_modal_table").html($.templates("#deviceinfo_modal_rows").render(data))
   },
   __show: function(){
@@ -53,7 +62,16 @@ var DeviceInfoModal = {
       Z.log("Can't erase flash")
     }
     DeviceInfoModal.__hide()
-  }
+  },
+  put_mode: function(mode){
+    if (DeviceInfoModal.dev && DeviceInfoModal.dev.alias){
+      Z.log("Putting in " + mode.toUpperCase() + " mode")
+      ZDevices.put_mode(DeviceInfoModal.dev, mode)
+    } else {
+      Z.log("Cannot put this device in selected mode")
+    }
+    DeviceInfoModal.__hide()
+  },
 }
 
 </script>
@@ -107,6 +125,7 @@ var DeviceInfoModal = {
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
         <button type="button" id="eraseflash" class="btn btn-danger" onclick="DeviceInfoModal.erase_flash()">Erase Flash</button>
+        <span class="putmode-btns-span"></span>
         <button type="button" class="btn btn-warning" onclick="DeviceInfoModal.forget()">Forget</button>
         <button type="button" class="btn btn-primary" onclick="DeviceInfoModal.__hide()">OK</button>
       </div>

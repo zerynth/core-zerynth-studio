@@ -75,7 +75,7 @@ var DeviceAddModal = {
 
 <script id="deviceadd_modal_row" type="text/x-jsrender">
 <tr onclick="DeviceAddModal.select($(this))">
-  <td><input type="checkbox" name="{{:target}}" {{if selected}}checked{{/if}}></td>
+  <td><input onchange="DeviceAddModal.select($(this).parent().parent())" type="checkbox" name="{{:target}}" {{if selected}}checked{{/if}}></td>
   <td>{{:name}}</td>
   <td>{{:board_producer}}</td>
   <td>{{:architecture}}</td>
