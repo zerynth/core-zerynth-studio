@@ -195,8 +195,8 @@ var ZButtonModal = {
     ZTC.vmlist(target)
         .then((vms)=>{
             if (!ZConf.rtoses || !ZConf.features){
-              ZConf.rtoses = vms.rtoses
-              ZConf.features = vms.features
+              ZConf.rtoses = vms.info.rtoses
+              ZConf.features = vms.info.features
             }
             ZTC.vmlistcreated(ZButtonModal.dev.remote_id)
               .then((my_vms)=>{

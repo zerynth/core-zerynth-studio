@@ -1,27 +1,27 @@
 <script>
 
-var UpdateModal = {
+var HotfixModal = {
   versions: {},
   __fill: function(data){
-    UpdateModal.versions=data
-      $("#update_msg").html("<h3>A new major release is available: "+data.latest+"</h3><br><h4>What's new</h4><br><i>"+data.changelog+"</i><br><br><h5>Press update to proceed...</h5>") 
+    HotfixModal.versions=data
+      $("#hotfix_msg").html("<h3>A hotfix with urgent fixes is available: "+data.latest+"-"+data.last_hotfix+"</h3><br><h4>What's new</h4><br><i>"+data.changelog+"</i><br><br><h5>Press update to proceed...</h5>") 
   },
   __err: function(msg){
-    $("#update_modal_error").html(msg)
-    $("#update_modal .alert-danger").show()
+    $("#hotfix_modal_error").html(msg)
+    $("#hotfix_modal .alert-danger").show()
   },
   __hide: function(){
-    $("#update_modal").modal("hide")
+    $("#hotfix_modal").modal("hide")
   },
   __show: function(){
-    $("#update_modal").modal()
+    $("#hotfix_modal").modal()
   },
   install: function(){
-    UpdateModal.__hide()
+    HotfixModal.__hide()
     
-    ZTC.command(["package","trigger_update"])
+    ZTC.command(["package","trigger_hotfix"])
       .then(()=>{
-        Z.log("Preparingupdatee...")
+        Z.log("Preparing hotfix...")
         Z.log("====>                                                   <====")
         Z.log("====> Restart Zerynth Studio to make changes effective! <====")
         Z.log("====>                                                   <====")
@@ -39,21 +39,21 @@ var UpdateModal = {
 </script>
 
 <!-- HTML -->
-<div class="modal fade" id="update_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade" id="hotfix_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
           <span class="pficon pficon-close"></span>
         </button>
-        <h4 class="modal-title" id="update_modal_title">System Update</h4>
+        <h4 class="modal-title" id="hotfix_modal_title">Hotfix</h4>
       </div>
       <div class="modal-body">
-        <b><div id="update_msg">The following packages have updates!</div></b><br>
+        <strong><div id="hotfix_msg" class="text-center">The following packages have updates!</div></strong><br>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="UpdateModal.install()">Update</button>
+        <button type="button" class="btn btn-primary" onclick="HotfixModal.install()">Update</button>
       </div>
     </div>
   </div>

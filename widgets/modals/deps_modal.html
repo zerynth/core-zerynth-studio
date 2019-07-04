@@ -1,0 +1,40 @@
+<script>
+
+var DepsModal = {
+    dev : null,
+  __fill: function(data){
+      DepsModal.dev = data
+  },
+  __show: function(){
+    $("#deps_modal").modal()
+  },
+  __hide: function(){
+    $("#deps_modal").modal("hide")
+  },
+  install: function(){
+      DepsModal.__hide()
+      App.install_dev_deps(DepsModal.dev)
+  }
+
+}
+</script>
+
+<div class="modal fade" id="deps_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">Dependencies installation</h4>
+      </div>
+      <div class="modal-body">
+          <div style="text-align: center;">This device requires the installation of some dependencies.<br>Would you like to continue?</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="DepsModal.install()">Install</button>
+      </div>
+    </div>
+  </div>
+</div>

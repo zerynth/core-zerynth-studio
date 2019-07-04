@@ -196,7 +196,7 @@ var App = {
                 $( document ).on( 'focus', ':input', function(){
                         $( this ).attr( 'autocomplete', 'off' );
                 });
-                $('.selectpicker').selectpicker(); //move in project_view
+                $('.selectpicker').selectpicker({showSubtext:true}); //move in project_view
                 $("#device_picker").selectpicker('show')
                 $("#device_manual_picker").selectpicker('hide')
                 $('[data-toggle="tooltip"]').tooltip()
@@ -574,71 +574,56 @@ var App = {
     },
     _update_checker: () => {
         var versions=false
-        var patches=false
         var messages=false
+        var usage=0
         var updated={}
         ZNotify.wait("Checking updates...")
         Z.log("Checking for updates...")
         //check versions
-        ZTC.command(["package","versions"],{
-            stdout:(line)=>{
-                try {
-                    versions = JSON.parse(line)
-                } catch (err){
-                    console.log("err reading json:"+err)
+        ZTC.command(["info","--disk_usage"],{
+                stdout:(line)=>{
+                    try {
+                        usage = parseInt(line)
+                    } catch (err){
+                        console.log("err reading usage:"+err)
+                    }
                 }
-            }
         }).then(()=>{
-            ZTC.command(["info","--messages"],{
-            stdout:(line)=>{
-                try {
-                    messages = JSON.parse(line)
-                } catch (err){
-                    console.log("err reading json:"+err)
+
+            ZTC.command(["package","versions"],{
+                stdout:(line)=>{
+                    try {
+                        versions = JSON.parse(line)
+                    } catch (err){
+                        console.log("err reading json:"+err)
+                    }
                 }
-            }}).then(()=>{
-
-                if (versions.minor_update){
-                    ZTC.command(["package","describe",versions.last_patch],{
-                    stdout:(line)=>{
-                        try {
-                            patches = JSON.parse(line)
-                        } catch (err){
-                            console.log("err reading json:"+err)
-                        }
-                    }}) .then(()=>{
-
-                        updated = {
-                            versions: versions,
-                            patches: patches,
-                            messages: messages
-                        }
-                        console.log(updated)
-                        ZNotify.done()
-                        Bus.dispatch("updates_checked",null,updated)
-
-                    }).catch((err)=>{
-                        Z.log("Error while checking for updates 2:"+err)
-                        ZNotify.done()
-                    })
-
-                } else {
+            }).then(()=>{
+                ZTC.command(["info","--messages"],{
+                stdout:(line)=>{
+                    try {
+                        messages = JSON.parse(line)
+                    } catch (err){
+                        console.log("err reading json:"+err)
+                    }
+                }}).then(()=>{
                     updated = {
                         versions: versions,
-                        patches: null,
-                        messages: messages
+                        messages: messages,
+                        usage: usage
                     }
                     ZNotify.done()
                     Bus.dispatch("updates_checked",null,updated)
-                }
-
+                }).catch((err)=>{
+                    Z.log("Error while checking for updates 1:"+err)
+                    ZNotify.done()
+                })
             }).catch((err)=>{
-                Z.log("Error while checking for updates 1:"+err)
+                Z.log("Error while checking for updates 3:"+err)
                 ZNotify.done()
             })
-
         }).catch((err)=>{
-            Z.log("Error while checking for updates 3:"+err)
+            Z.log("Error while checking for updates 4:"+err)
             ZNotify.done()
         })
         //check messages
@@ -776,6 +761,10 @@ var App = {
             ZNotify.alert("Select a target device first!","No device selected","error")
             return
         }
+        if(!tgt.has_all_deps) {
+            Dialogs.modal("DepsModal",tgt)
+            return
+        }
         ZNotify.wait("Compiling...")
         App._compile(prj,tgt.target)
             .then((data)=>{
@@ -800,6 +789,10 @@ var App = {
         if (tgt.alias in Store.consoles){
             console_was_opened = true
             Store.consoles[tgt.alias].win.close()
+        }
+        if(!tgt.has_all_deps) {
+            Dialogs.modal("DepsModal",tgt)
+            return
         }
         ZNotify.wait("Compiling...")
         App._compile(prj,tgt.target)
@@ -920,8 +913,32 @@ var App = {
             ZNotify.alert("This device is not in virtualizable mode!","Error","error")
             return
         }
+        if(!dev.has_all_deps) {
+            Dialogs.modal("DepsModal",dev)
+        } else {
+            if (!App.check_actions()) return;
+            Dialogs.modal("ZButtonModal",{dev:dev})
+        }
+    },
+    install_dev_deps: function(dev){
         if (!App.check_actions()) return;
-        Dialogs.modal("ZButtonModal",{dev:dev})
+        Store.action("installing",true)
+        ZNotify.wait("Installing deps...")
+        ZTC.command(["package","install_deps",dev.fullname])
+            .then(()=>{
+                try {
+                    Store.action("installing",false)
+                    ZNotify.done()
+                    ZDevices.disambiguate()
+                } catch(eee){
+                    console.log(eee)
+                }
+            })
+            .catch((err)=>{
+                Store.action("installing",false)
+                ZNotify.done("Error")
+                ZDevices.disambiguate()
+            })
     },
     device_info: function(){
         Dialogs.modal("DeviceInfoModal",ZDevices.selected)
@@ -1218,12 +1235,21 @@ var App = {
     },
     clean: function(inst){
         if(inst){
-            ZTC.command(["clean","--inst",inst]).then(()=>{
-                App.update_uninst_menu()
-            })
+            if (inst=="old") {
+                ZTC.command(["clean","--older"]).then(()=>{
+                    App.update_uninst_menu()
+                    App._update_checker()
+                })
+            } else {
+                ZTC.command(["clean","--inst",inst]).then(()=>{
+                    App.update_uninst_menu()
+                    App._update_checker()
+                })
+            }
 
         } else {
             ZTC.command(["clean","--tmp"])
+            App._update_checker()
         }
 
     },

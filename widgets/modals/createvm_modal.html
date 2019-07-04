@@ -9,19 +9,25 @@ var CreateVMModal = {
   exclusivity: false,
   __fill: function(data){
     console.log(data) 
-    var vmdata = data.vms
-    var patches = vmdata["patches"]
-    if (patches.length<=0){
-      CreateVMModal.vms=null
-      return
-    }
+    var vmdata = data.vms["versions"]
+    var vminfo = data.vms["info"]
+    //if (vmdata.length<=0){
+    //  CreateVMModal.vms=null
+    //  return
+    //}
+    console.log(vmdata)
     CreateVMModal.exclusivity = false
     var vms = []
+    var versions = []
+    var clogs = {}
 
     vm_number = 0
-    _.each(patches,(patch,idx,allvm)=>{
+    _.each(vmdata,(history,version,allvm)=>{
         var cnt=0
-        _.each(vmdata.vms[patch],(v,k,l)=>{
+        var vvv = history["vms"]["base"]
+        clogs[version]=history["changelog"]["base"]
+        versions.push(version)
+        _.each(vvv,(v,k,l)=>{
           // basic_rtos = vmdata.rtoses[v.rtos].split(" ")[0].toLowerCase();
           license = v.pro ? ("premium"):("starter");
           xx = _.find(Store.profile.assets.table,(v2,k2,l2)=>{
@@ -39,11 +45,11 @@ var CreateVMModal = {
           }
           vms.push({
             title:v.title,
-            patch: patch,
-            version: ZConf.vrs,
+            patch: "base",
+            version: version,
             description:v.description,
-            rtos: vmdata.rtoses[v.rtos] || "None",
-            features: _.map(v.features,(vv,kk,ll)=>{ return vmdata.features[vv]}).join(", ") || "---",
+            rtos: vminfo.rtoses[v.rtos] || "None",
+            features: _.map(v.features,(vv,kk,ll)=>{ return vminfo.features[vv]}).join(", ") || "---",
             thevm: v,
             pro:license,
             index:cnt,
@@ -53,7 +59,7 @@ var CreateVMModal = {
             exclusivity: v.exclusivity
           })
           if (v.exclusive || v.exclusivity) {
-            CreateVMModal.exclusivity = v.exclusivity          
+            CreateVMModal.exclusivity = v.exclusivity
           }
 
           cnt++
@@ -68,23 +74,24 @@ var CreateVMModal = {
 
     //$("#createvm_modal_table").html($.templates("#createvm_modal_row").render({ patches:patches, changelog:vmdata.changelog,vms:vms}))
 
-    var new_patches = _.map(patches,(elem)=>{
+    var new_versions = _.map(versions,(elem)=>{
       var xx = {};
-      xx.patch = elem;
+      xx.version = elem;
       return xx
     })
+    console.log(new_versions)
     $("#createvm_modal_div").html("")
     CreateVMModal.dev = data.dev
     CreateVMModal.vms = vms
-    CreateVMModal.patches = patches
-    CreateVMModal.new_patches = new_patches
-    CreateVMModal.changelog = vmdata["changelog"]
+    CreateVMModal.versions = versions
+    CreateVMModal.new_versions = new_versions
+    CreateVMModal.changelog = clogs
     CreateVMModal.callback = data.callback
     console.log(CreateVMModal)
     $("#createvm_modal").on("hidden.bs.modal", function () {
       if (CreateVMModal.callback) CreateVMModal.callback()
     });
-    CreateVMModal.display_patch(new_patches[patches.length-1].patch)
+    CreateVMModal.display_version(new_versions[versions.length-1].version)
   },
   __show: function(){
     if(!CreateVMModal.vms){
@@ -131,10 +138,10 @@ var CreateVMModal = {
         }
       })
   },
-  display_patch: function(patch_name){
+  display_version: function(version_name){
     var html=""
-    var cc = CreateVMModal.changelog[patch_name]
-    var vv = _.filter(CreateVMModal.vms,(item)=>{return item.patch==patch_name})
+    var cc = CreateVMModal.changelog[version_name]
+    var vv = _.filter(CreateVMModal.vms,(item)=>{return item.version==version_name})
     var ordvms = []
     for (var rtos in ZConf.rtoses) {
       var listvm = _.filter(vv, (item)=>{
@@ -146,12 +153,16 @@ var CreateVMModal = {
       }
     }
     ordvms = _.sortBy(ordvms,"rtos").reverse()
-    html=$.templates("#createvm_modal_table2").render({
-        patch:patch_name,
+    var opt =   {
+        version:version_name,
         changelog:cc,
         vv:ordvms,
-        patches:CreateVMModal.new_patches,
-        exclusivity:CreateVMModal.exclusivity})
+        versions:CreateVMModal.new_versions,
+        exclusivity:false
+    }
+    console.log(opt)
+
+    html=$.templates("#createvm_modal_table2").render(opt)
     $("#createvm_modal_div").html(html)
   },
   select: function(row){
@@ -182,25 +193,25 @@ var CreateVMModal = {
 </script>
 <script id="createvm_modal_table2" type="text/x-jsrender">
     <div style="font-size:15px;text-align: center">Create a Virtual Machine</div>
-    <div style="font-size:15px;text-align: center">{{:patch.toUpperCase()}} RELEASE - Changelog: {{:changelog}}</div>
+    <div style="font-size:15px;text-align: center">{{:version.toUpperCase()}} RELEASE - Changelog: {{:changelog}}</div>
     <hr>
     {{if exclusivity}}
       <div style="font-size:15px;text-align:center;margin-bottom:6px"><span class="label label-primary">The VMs are available for {{:exclusivity}} users only</span></div>
     {{/if}}
-    {{if patches.length>1}}
-      <div style="font-size:15px;text-align: center" id="createvm_modal_ptch">Available patches:
+    {{if versions.length>1}}
+      <div style="font-size:15px;text-align: center" id="createvm_modal_ptch">Available versions:
         <br>
         <div id="patch_selector" class="btn-group" data-toggle="buttons">
-          {{for patches ~cur=patch}}
-            <label class="btn btn-{{if patch=='base'}}primary{{else}}warning{{/if}}">
-              <input type="radio" name="patch_sel" id="input_{{:patch}}" value="{{:patch}}" onchange="CreateVMModal.display_patch('{{:patch}}')">{{:patch.toUpperCase()}}
+          {{for versions ~cur=version}}
+            <label class="btn btn-{{if version=='base'}}primary{{else}}warning{{/if}}">
+              <input type="radio" name="patch_sel" id="input_{{:version}}" value="{{:version}}" onchange="CreateVMModal.display_version('{{:version}}')">{{:version.toUpperCase()}}
             </label>
           {{/for}}  
         </div>
       </div>
     <hr>
     {{/if}}
-    {{for vv ~cur=patch}}
+    {{for vv ~cur=version}}
       <p>Select one of the available configurations for {{:rtos}}</p>
       <table class="table table-striped table-bordered" style="max-height: 600px;padding:4px">
         <tr style="background-color:#468c8c;color:#ffffff">

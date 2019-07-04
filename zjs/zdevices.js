@@ -20,7 +20,7 @@ var ZDevices = {
             Bus.addEventListener("package_installed",ZDevices.get_targets,ZDevices)
         }
         ZDevices.mode = ZConf.get("device_mode") || "auto"
-        ZDevices.get_targets()
+        ZDevices.get_targets().catch((err)=>{Z.log("Error loading targets: "+err)})
         ZDevices.switch_mode(ZDevices.mode) 
     },
     start: function(){
@@ -123,13 +123,12 @@ var ZDevices = {
     },
     get_targets: function(){
         ZDevices.targets={}
-        ZTC.command(["info","--devices"],{
+        return ZTC.command(["info","--devices"],{
             stdout:(line)=>{
                 var res = JSON.parse(line)
                 ZDevices.targets[res.target]=res
             }
         })
-        .catch((err)=>{Z.log("Error loading targets: "+err)})
     },
     get_manual_targets: function(){
         ZDevices.manual_device_list={}
@@ -140,11 +139,10 @@ var ZDevices = {
                 ZDevices.manual_device_list = _.map(res,(k,v,l)=>{return k})
             }
         })
-
-
     },
     disambiguate: function(dev){
         ZDevices.done()
+        ZDevices.get_targets().then(()=>{ZDevices.reload_virtual()}).catch((err)=>{Z.log("error reloading virtual devs")})
         ZDevices.start()
     },
     set_alias: function(dev,no_restart){
@@ -177,7 +175,18 @@ var ZDevices = {
             })
             .catch((err)=>{console.log("error putting in selected mode:"+err)})
     },
+    reload_virtual: function(){
+        var vl = ZDevices.virtual_list
+        console.log("Reloading")
+        var tgt = []
+        _.each(vl,(v,k,l)=>{
+            tgt.push(v.target)
+        })
+        ZDevices.add_virtual(tgt)
+    },
     add_virtual: function(targets){
+        console.log("add virtual")
+        console.log(targets)
         ZDevices.virtual_list=[]
         // var toadd= _.filter(targets,(item)=>{
         //     return !_.find(ZDevices.virtual_list,(ii)=>{
@@ -202,9 +211,9 @@ var ZDevices = {
         var picker = $("#device_picker")
         picker.empty()
         picker.prop("disabled",false)
-        var hlist = $.templates('<option data-icon="fa fa-usb" value="{{:optkey}}">{{: name || custom_name}}</option>').render(ZDevices.device_list)
+        var hlist = $.templates('<option data-icon="fa fa-usb" data-subtext="{{if has_all_deps}}{{else}}missing deps{{/if}}"  value="{{:optkey}}">{{: name || custom_name}}</option>').render(ZDevices.device_list)
         var hambiguous = $.templates('<option data-icon="fa fa-question-circle" value="{{:optkey}}">{{: name || custom_name}}</option>').render(ZDevices.ambiguous_info)
-        var hvirtual = $.templates('<option data-icon="fa fa-bullseye" value="{{:optkey}}">{{: name || custom_name}}</option>').render(ZDevices.virtual_list)
+        var hvirtual = $.templates('<option data-icon="fa fa-bullseye" data-subtext="{{if has_all_deps}}{{else}}missing deps{{/if}}" value="{{:optkey}}">{{: name || custom_name}}</option>').render(ZDevices.virtual_list)
         
         if(hlist.length>0) hlist='<optgroup label="Physical Devices">'+hlist+'</optgroup>';
         if(hambiguous.length>0) hambiguous='<optgroup label="Ambiguous Devices">'+hambiguous+'</optgroup>';

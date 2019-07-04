@@ -1,0 +1,46 @@
+<script>
+
+var UsageModal = {
+    usage : null,
+  __fill: function(usage){
+      UsageModal.usage = usage
+      $("#usage_gb").html(usage)
+  },
+  __show: function(){
+    $("#usage_modal").modal()
+  },
+  __hide: function(){
+    $("#usage_modal").modal("hide")
+  },
+  clean_temp: function(){
+      UsageModal.__hide()
+      App.clean()
+  },
+  clean_inst: function(){
+      UsageModal.__hide()
+      App.clean("old")
+  }
+
+}
+</script>
+
+<div class="modal fade" id="usage_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">Clean up!</h4>
+      </div>
+      <div class="modal-body">
+          <div style="text-align: center;">It appears Zerynth is using up a lot of space! (<span id="usage_gb"></span> Gb)<br>It is possible to clean up temporary files or delete all older installations.<br>Older installations can also be deleted one by one from the Preferences menu</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="UsageModal.clean_temp()">Clean Temp</button>
+        <button type="button" class="btn btn-danger" onclick="UsageModal.clean_inst()">Delete older installations</button>
+      </div>
+    </div>
+  </div>
+</div>

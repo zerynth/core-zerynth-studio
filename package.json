@@ -1,16 +1,12 @@
 {
-        "dependencies": {
-            "core.zerynth.toolchain": "r2.2.0",
-            "sys.zerynth.browser": "r2.2.0"
-        },
-        "description": "Zerynth Studio",
-        "fullname": "core.zerynth.studio",
-        "git_pointer": "zerynth://zerynth-core/zerynth-studio",
-        "keywords": [],
-        "repo": "official",
-        "skinnable": true,
-        "title": "Zerynth Studio",
-        "version": "r2.2.0",
-        "whatsnew": ""
- }
-
+    "main": "index.html",
+    "name": "Zerynth Studio",
+    "user-agent": "ide/%ver/linux64",
+    "version": "r2.3.0",
+    "window": {
+        "frame": true,
+        "icon": "img/Logo512.png",
+        "min_height": 600,
+        "min_width": 800
+    }
+}

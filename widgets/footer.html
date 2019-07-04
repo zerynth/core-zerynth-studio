@@ -4,8 +4,9 @@ var Footer = {
     init: ()=>{
         Bus.addEventListener("updates_checked",Footer.check,Footer)
         $("#systemupdate_label").hide()
-        $("#patches_label").hide()
+        $("#hotfix_label").hide()
         $("#messages_label").hide()
+        $("#usage_label").hide()
     },
     hide: () =>{
         $("#systemupdate_label").hide()
@@ -15,13 +16,15 @@ var Footer = {
         if (Footer.disabled_updates) return;
         $("#systemupdate_label").hide()
         versions = updated.versions
-        patches = updated.patches
         messages = updated.messages
+        usage = updated.usage
         if (versions.major_update) $("#systemupdate_label").show();
         else $("#systemupdate_label").hide()
-        if (versions.minor_update) $("#patches_label").show();
-        else $("#patches_label").hide()
-        
+        if (versions.minor_update) $("#hotfix_label").show();
+        else $("#hotfix_label").hide()
+        if (usage > 9) $("#usage_label").show();
+        else $("#usage_label").hide()
+
         var num_msg = 0;
         _.each(messages,(m,k,l)=>{if (!m.read) num_msg++})
         if (num_msg) {
@@ -29,11 +32,11 @@ var Footer = {
             $("#messages_label").show();
         }
         else $("#messages_label").hide()
-        
+
 
         Footer.versions = versions
-        Footer.patches = patches
         Footer.messages = messages
+        Footer.usage = usage
 
     },
     messages_read: ()=>{
@@ -47,20 +50,23 @@ function handle_footer_notify(div){
         require('nw.gui').Shell.openExternal(ZConf.storeurl);
     } else if (div.id=="systemupdate_label"){
         Dialogs.modal("UpdateModal",Footer.versions)
-    } else if (div.id=="patches_label"){
-        Dialogs.modal("PatchesModal",Footer.patches)
+    } else if (div.id=="hotfix_label"){
+        Dialogs.modal("HotfixModal",Footer.versions)
     } else if (div.id=="messages_label"){
         Dialogs.modal("MessagesModal",Footer.messages)
+    } else if (div.id=="usage_label"){
+        Dialogs.modal("UsageModal",Footer.usage)
     }
-    
+
 }
 </script>
 <div id="notify_area">
 <span id="test_label" class="label label-warning" style="display:none">LOCAL VERSION</span>
 <span id="ci_label" class="label label-warning" style="display:none">CI VERSION</span>
+<span id="usage_label" class="label label-danger" onclick="handle_footer_notify(this)" style="display:none">Clean Up!</span>
 <span id="messages_label" class="label label-success" onclick="handle_footer_notify(this)"><span class="fa fa-envelope-o"></span>&nbsp;<span id="messages_label_num"></span></span>
-<span id="patches_label" class="label label-success" onclick="handle_footer_notify(this)"><span class="fa fa-fw fa-download"></span>Rolling update</span>
-<span id="systemupdate_label" class="label label-info" onclick="handle_footer_notify(this)">System Update</span>
+<span id="hotfix_label" class="label label-danger" onclick="handle_footer_notify(this)"><span class="fa fa-fw fa-download"></span>Hotfix available!</span>
+<span id="systemupdate_label" class="label label-success" onclick="handle_footer_notify(this)"><span class="fa fa-fw fa-download"></span>System Update</span>
 </div>
 <div id="spinner_text" style="margin-left:auto;margin-right:32px"></div>
 <div class="spinner spinner-sm" id="spinner" style="height:20px !important;width:20px !important; position:absolute; right:10px;display:none"></div>
