@@ -169,11 +169,25 @@ var ZDevices = {
             })
             .catch((err)=>{console.log("erase flash not OK:"+err)})
     },
-    put_mode: function(dev, mode){
-        ZTC.command(["device","put_mode",dev.alias,mode])
-            .then(()=>{
-            })
-            .catch((err)=>{console.log("error putting in selected mode:"+err)})
+    custom_action: function(dev, action, action_param){
+        custom_action_cmd = ["device","custom_action",dev.alias,action]
+        if (action_param) {
+            custom_action_cmd.push("--action-param")
+            custom_action_cmd.push(action_param)
+        }
+        return ZTC.command(custom_action_cmd, {
+            stdout:(line)=>{
+                if (line.startsWith("###")) {
+                    Z.log(line)
+                }
+                else {
+                    var res = JSON.parse(line)
+                    if ('params' in res) {
+                        ZDevices.deviceaction_result = res
+                    }
+                }
+            }
+        })
     },
     reload_virtual: function(){
         var vl = ZDevices.virtual_list

@@ -223,8 +223,8 @@ var ZButtonModal = {
     if (!ZConf.rtoses || !ZConf.features){
       ZTC.vmlist(target)
         .then((vms)=>{
-          ZConf.rtoses = vms.rtoses
-          ZConf.features = vms.features
+          ZConf.rtoses = vms.info.rtoses
+          ZConf.features = vms.info.features
           ZButtonModal.__hide()
           Dialogs.modal("VirtualizeModal",Store.vms[target][chipid])
         })

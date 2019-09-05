@@ -1,0 +1,55 @@
+<script>
+
+var DeviceActionModal = {
+  __fill: function(data){
+    $("#deviceaction_text").html(data.result.text)
+    $("#deviceaction_title").html(data.result.title)
+
+    DeviceActionModal.data = data
+    DeviceActionModal.disable_action = false
+    $("#deviceaction_params").html("")
+    $.each(data.result.params, function(index, param) {
+      $("#deviceaction_params").append($('<button type="button" class="btn btn-info" onclick="DeviceActionModal.select_param(\'' + param + '\')">' + param.toUpperCase() + '</button>'));
+    })
+  },
+  __show: function(){
+    $("#deviceaction_modal").modal()
+  },
+  __hide: function(){
+    $("#deviceaction_modal").modal("hide")
+  },
+  select_param: function(param) {
+    Z.log("Executing action again with param: " + param)
+    if (!DeviceActionModal.disable_action) {
+      DeviceActionModal.disable_action = true
+      ZDevices.custom_action(DeviceActionModal.data.dev, DeviceActionModal.data.action, param).then(() => {
+        Z.log("Action successfully executed")
+        DeviceActionModal.__hide()
+        DeviceActionModal.disable_action = false
+      })
+    }
+    else {
+      Z.log("Wait for action to be completed!")
+    }
+  }
+}
+</script>
+
+<div class="modal fade" id="deviceaction_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="deviceaction_title"></h4>
+      </div>
+      <div class="modal-body">
+        <div id="deviceaction_text"></div>
+      </div>
+      <div class="modal-footer">
+        <div id="deviceaction_params"></div>
+      </div>
+    </div>
+  </div>
+</div>
