@@ -22,7 +22,8 @@ var VirtualizeModal = {
         version:v.version,
         patch:v.patch,
         rtos: ZConf.rtoses[v.rtos],
-        features: _.map(v.features,(vv,kk,ll)=>{ return ZConf.features[vv]}).join(", ") || "---",
+        features: _.map(v.features,(vv,kk,ll)=>{ return ZConf.features[vv]}).join(", ") || "---",      
+        vm_features: _.map(v.features,(vv,kk,ll)=>{ return vv }).join(", "),
         devname: v.name, /*? (v.name, _.find(ZDevices.targets,(item)=>{ return item.target==v.target }).name)*/
       }
     })
@@ -121,7 +122,7 @@ var VirtualizeModal = {
       <td><input type="radio" value="{{:uuid}}" name="vms" {{if index==0}}checked{{/if}}></td>
       <td>{{:devname}}</td>
       <td>{{:rtos}}</td>
-      <td>{{if features == '---'}}Starter{{else}}Premium{{/if}}</td>
+      <td>{{if (features == '' || features == 'ble')}}Starter{{else}}Premium{{/if}}</td>
       <td>{{:features}}</td>
       <td>{{:patch.toUpperCase()}}</td>
     </tr>

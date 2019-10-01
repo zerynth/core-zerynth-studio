@@ -117,11 +117,11 @@ function Project(path){
             try {
                 var stats = fs.statSync(me.projfile)
                 if (!stats.isFile()) {
-                    reject("No project at "+me.projfile)
+                    reject("No Zerynth Project at "+me.path)
                     return
                 }  
             } catch(err){
-                reject("No project at "+me.projfile)
+                reject("Invalid Zerynth Project - No "+me.projfile+" found.")
                 return
             }
 

@@ -81,7 +81,8 @@ var Dialogs = {
             prj.open().then(()=>{
                 Store.add_project(prj,true)
             }).catch((err)=>{
-                ZNotify.done(err)
+                //ZNotify.done(err)
+                ZNotify.alert(err,"Open Project","warning")
             })
         })
     },
