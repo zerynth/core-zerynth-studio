@@ -198,23 +198,35 @@ var ZButtonModal = {
               ZConf.rtoses = vms.info.rtoses
               ZConf.features = vms.info.features
             }
-            ZTC.vmlistcreated(ZButtonModal.dev.remote_id)
+            return ZTC.vmlistcreated(ZButtonModal.dev.remote_id)
               .then((my_vms)=>{
-                ZButtonModal.__hide()
-                Dialogs.modal("CreateVMModal",{
-                    dev:ZButtonModal.dev,
-                    vms:vms, 
-                    my_vms:my_vms,
-                    callback:() =>{ZButtonModal.__show(); ZButtonModal.adjust()}})
-              })
-              .catch((err)=>{
-                ZButtonModal.__hide()
-                Z.log("Error retrieving created vm list")
+								var openCreateVmModal = () => {
+									ZButtonModal.__hide()
+									return Dialogs.modal("CreateVMModal",{
+											dev:ZButtonModal.dev,
+											vms:vms,
+											my_vms:my_vms,
+											callback:() =>{ZButtonModal.__show(); ZButtonModal.adjust()}})
+								}
+								if(!Store.profile || !Store.profile.assets) {
+									// If store is not set, fetch it before opening the CreateVM
+									// modal.
+									console.log("Updating profile before CreateVM")
+									return ZTC.get_profile()
+										.then((prof) => {
+											Store.set_profile(prof)
+											return openCreateVmModal()
+										})
+								} else {
+									// Open CreateVM modal without any other API call.
+									return openCreateVmModal()
+								}
               })
         })
         .catch((err)=>{
-            ZButtonModal.__hide()
-            Z.log("Error retrieving vm list")
+					console.error("Error in createvm", err)
+					ZButtonModal.__hide()
+					ZNotify.alert("An internet connection error occured. Please check your connection and try again.","Connection error","error",false)
         })
   },
   virtualize: function(){

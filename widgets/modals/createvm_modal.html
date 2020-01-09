@@ -74,13 +74,18 @@ var CreateVMModal = {
 
     //$("#createvm_modal_table").html($.templates("#createvm_modal_row").render({ patches:patches, changelog:vmdata.changelog,vms:vms}))
 
-    var new_versions = _.map(versions,(elem)=>{
+    console.log(versions)
+    versions.reverse()
+    console.log(versions)
+
+    var new_versions = _.sortBy(_.map(versions,(elem)=>{
       var xx = {};
       xx.version = elem;
       return xx
-    })
+    }),"version").reverse()
+    new_versions[0].index = 0;
     console.log(new_versions)
-    $("#createvm_modal_div").html("")
+
     CreateVMModal.dev = data.dev
     CreateVMModal.vms = vms
     CreateVMModal.versions = versions
@@ -91,7 +96,25 @@ var CreateVMModal = {
     $("#createvm_modal").on("hidden.bs.modal", function () {
       if (CreateVMModal.callback) CreateVMModal.callback()
     });
-    CreateVMModal.display_version(new_versions[versions.length-1].version)
+    CreateVMModal.display_version(new_versions[0].version)
+    if (versions.length > 1){
+      var picker = $("#zvm_version_select")
+      console.log(picker)
+      picker.empty()
+      picker.unbind("change")
+      picker.html($.templates('<option value="{{:version}}">{{:version.toUpperCase()}}{{if index==0}} (latest){{/if}}</option>').render(CreateVMModal.new_versions))
+      picker.selectpicker("val",new_versions[0].version)
+      picker.selectpicker("refresh")
+      picker.on("change",function(){
+        var selected = $('#zvm_version_select option:selected').val();
+        console.log(selected)
+        picker.selectpicker("val",selected)
+        CreateVMModal.display_version(selected)
+      })
+    }
+    else {
+        $("#createvm_modal_div2").hide()
+    }
   },
   __show: function(){
     if(!CreateVMModal.vms){
@@ -162,8 +185,10 @@ var CreateVMModal = {
     }
     console.log(opt)
 
-    html=$.templates("#createvm_modal_table2").render(opt)
-    $("#createvm_modal_div").html(html)
+    html=$.templates("#createvm_modal_table1").render(opt)
+    $("#createvm_modal_div1").html(html)
+    html=$.templates("#createvm_modal_table3").render(opt)
+    $("#createvm_modal_div3").html(html)
   },
   select: function(row){
     row.children('td').children('input').prop('checked', true);
@@ -191,32 +216,22 @@ var CreateVMModal = {
 }
 
 </script>
-<script id="createvm_modal_table2" type="text/x-jsrender">
+<script id="createvm_modal_table1" type="text/x-jsrender">
     <div style="font-size:15px;text-align: center">Create a Virtual Machine</div>
     <div style="font-size:15px;text-align: center">{{:version.toUpperCase()}} RELEASE - Changelog: {{:changelog}}</div>
     <hr>
     {{if exclusivity}}
       <div style="font-size:15px;text-align:center;margin-bottom:6px"><span class="label label-primary">The VMs are available for {{:exclusivity}} users only</span></div>
     {{/if}}
-    {{if versions.length>1}}
-      <div style="font-size:15px;text-align: center" id="createvm_modal_ptch">Available versions:
-        <br>
-        <div id="patch_selector" class="btn-group" data-toggle="buttons">
-          {{for versions ~cur=version}}
-            <label class="btn btn-{{if version=='base'}}primary{{else}}warning{{/if}}">
-              <input type="radio" name="patch_sel" id="input_{{:version}}" value="{{:version}}" onchange="CreateVMModal.display_version('{{:version}}')">{{:version.toUpperCase()}}
-            </label>
-          {{/for}}  
-        </div>
-      </div>
-    <hr>
-    {{/if}}
+</script>
+<script id="createvm_modal_table3" type="text/x-jsrender">
     {{for vv ~cur=version}}
       <p>Select one of the available configurations for {{:rtos}}</p>
       <table class="table table-striped table-bordered" style="max-height: 600px;padding:4px">
         <tr style="background-color:#468c8c;color:#ffffff">
           <th style="width:5%">#</th>
-          <th style="width:30%">Configuration</th>
+          <th style="width:20%">Configuration</th>
+          <th style="width:10%">Version</th>
           <th style="width:15%">RTOS</th>
           <th style="width:30%">Features</th>
           <th style="width:10%">License</th>
@@ -225,7 +240,8 @@ var CreateVMModal = {
         {{for vms ~pp=~cur}}
           <tr onclick="CreateVMModal.select($(this))">
             <td><input type="radio" value="{{:num}}" name="vms" {{if index==0}}checked{{/if}}></td>
-            <td>{{:title}} ({{:~pp.toUpperCase()}})</td>
+            <td>{{:title}}</td>
+            <td>{{:~pp.toUpperCase()}}</td>
             <td>{{:rtos}}</td>
             <td>{{:features}}</td>
             <td>{{:pro[0].toUpperCase()+pro.substr(1)}}</td>
@@ -251,7 +267,15 @@ var CreateVMModal = {
         <h4 class="modal-title" id="create_vm_title">Create VM</h4>
       </div>
       <div class="modal-body">
-        <div id="createvm_modal_div"></div>
+        <div id="createvm_modal_div1"></div>
+        <div id="createvm_modal_div2">
+          <div style="font-size:15px;text-align: center" id="createvm_modal_ptch">Available versions:
+            <br>
+            <select id="zvm_version_select" class="selectpicker"></select>
+          </div>
+        <hr>
+        </div>
+        <div id="createvm_modal_div3"></div>
         <div class="alert alert-danger" style="display:none">
           <span class="pficon pficon-error-circle-o"></span><p id="createvm_error"></p>
         </div>

@@ -2,7 +2,7 @@
     "main": "index.html",
     "name": "Zerynth Studio",
     "user-agent": "ide/%ver/linux64",
-    "version": "r2.3.0",
+    "version": "r2.3.3",
     "window": {
         "frame": true,
         "icon": "img/Logo512.png",
