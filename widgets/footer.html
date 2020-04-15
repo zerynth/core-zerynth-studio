@@ -48,6 +48,8 @@ var Footer = {
 function handle_footer_notify(div){
     if (div.id=="buyvms_label"){
         require('nw.gui').Shell.openExternal(ZConf.storeurl);
+    } else if (div.id=="zdm_label"){
+        require('nw.gui').Shell.openExternal(ZConf.zdmurl);
     } else if (div.id=="systemupdate_label"){
         Dialogs.modal("UpdateModal",Footer.versions)
     } else if (div.id=="hotfix_label"){
