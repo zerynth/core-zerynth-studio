@@ -18,10 +18,10 @@ body {
   margin: 0;
   overflow: hidden;
   -webkit-user-select: none;
-  /*#468c8c;*/
+  /*#0070EF;*/
 }
 :root {
-  --zcolor: #468c8c;
+  --zcolor: #0070EF;
 }
 
 .mainlayout {
@@ -736,4 +736,28 @@ body {
 .history-table {
       -webkit-user-select: text;
       user-select:text;
+}
+
+.bootstrap-select.btn-group .dropdown-menu>.selected>a {
+    background-color: var(--zcolor)!important;
+}
+
+.bootstrap-select.btn-group .dropdown-menu>li>a:active {
+    background-color: var(--zcolor)!important;
+}
+
+.card-pf.card-pf-accented {
+    border-top-color: var(--zcolor)!important;
+}
+
+a.add {
+    color: var(--zcolor)!important;
+}
+
+.treeview .list-group-item.node-selected {
+    background-color: var(--zcolor)!important;
+}
+
+.btn-primary {
+     background-color: var(--zcolor)!important;   
 }

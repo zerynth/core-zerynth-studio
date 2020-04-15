@@ -41,7 +41,7 @@ var DeviceAddModal = {
   },
   create_table: function(devices){
     $("#deviceadd_modal_table").addClass('table-striped');
-    var header = "<tr style=\"background-color:#468c8c;color:#ffffff\"><th>#</th><th>Board</th><th>By</th><th>Architecture</th><th>Model</th></tr>"
+    var header = "<tr style=\"background-color:#0070EF;color:#ffffff\"><th>#</th><th>Board</th><th>By</th><th>Architecture</th><th>Model</th></tr>"
     devices = _.sortBy(devices,"name")
     $("#deviceadd_modal_table").html(header+$.templates("#deviceadd_modal_row").render(devices))
   },
@@ -107,7 +107,7 @@ var DeviceAddModal = {
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="DeviceAddModal.add()">Set</button>
+        <button type="button" class="btn btn-info" onclick="DeviceAddModal.add()">Set</button>
       </div>
     </div>
   </div>

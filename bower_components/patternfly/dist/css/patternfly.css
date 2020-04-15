@@ -1123,7 +1123,7 @@ a {
 }
 a:hover,
 a:focus {
-  color: #00659c;
+  color: #0070EF;
   text-decoration: underline;
 }
 a:focus {
@@ -3123,7 +3123,7 @@ fieldset[disabled] .btn-default.focus {
 .btn-primary {
   color: #fff;
   background-color: #0088ce;
-  border-color: #00659c;
+  border-color: #0070EF;
 }
 .btn-primary:focus,
 .btn-primary.focus {
@@ -3171,7 +3171,7 @@ fieldset[disabled] .btn-primary:focus,
 .btn-primary[disabled].focus,
 fieldset[disabled] .btn-primary.focus {
   background-color: #0088ce;
-  border-color: #00659c;
+  border-color: #0070EF;
 }
 .btn-primary .badge {
   color: #0088ce;
@@ -3236,7 +3236,7 @@ fieldset[disabled] .btn-success.focus {
 }
 .btn-info {
   color: #fff;
-  background-color: #00659c;
+  background-color: #0070EF;
   border-color: #005483;
 }
 .btn-info:focus,
@@ -3284,11 +3284,11 @@ fieldset[disabled] .btn-info:focus,
 .btn-info.disabled.focus,
 .btn-info[disabled].focus,
 fieldset[disabled] .btn-info.focus {
-  background-color: #00659c;
+  background-color: #0070EF;
   border-color: #005483;
 }
 .btn-info .badge {
-  color: #00659c;
+  color: #0070EF;
   background-color: #fff;
 }
 .btn-warning {
@@ -3426,7 +3426,7 @@ fieldset[disabled] .btn-link {
 }
 .btn-link:hover,
 .btn-link:focus {
-  color: #00659c;
+  color: #0070EF;
   text-decoration: underline;
   background-color: transparent;
 }
@@ -4738,7 +4738,7 @@ fieldset[disabled] .navbar-inverse .btn-link:focus {
 .pagination > li > a:focus,
 .pagination > li > span:focus {
   z-index: 2;
-  color: #00659c;
+  color: #0070EF;
   background-color: #ededed;
   border-color: #ddd;
 }
@@ -4882,7 +4882,7 @@ a.label:focus {
   background-color: #307628;
 }
 .label-info {
-  background-color: #00659c;
+  background-color: #0070EF;
 }
 .label-info[href]:hover,
 .label-info[href]:focus {
@@ -5145,7 +5145,7 @@ a.thumbnail.active {
   background-image: linear-gradient(-45deg, rgba(3, 3, 3, 0.15) 25%, rgba(3, 3, 3, 0.15) 26%, transparent 27%, transparent 49%, rgba(3, 3, 3, 0.15) 50%, rgba(3, 3, 3, 0.15) 51%, transparent 52%, transparent 74%, rgba(3, 3, 3, 0.15) 75%, rgba(3, 3, 3, 0.15) 76%, transparent 77%);
 }
 .progress-bar-info {
-  background-color: #00659c;
+  background-color: #0070EF;
 }
 .progress-striped .progress-bar-info {
   background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
@@ -5708,22 +5708,22 @@ button.list-group-item-danger.active:focus {
   border-bottom-color: #3f9c35;
 }
 .panel-info {
-  border-color: #00659c;
+  border-color: #0070EF;
 }
 .panel-info > .panel-heading {
   color: #fff;
-  background-color: #00659c;
-  border-color: #00659c;
+  background-color: #0070EF;
+  border-color: #0070EF;
 }
 .panel-info > .panel-heading + .panel-collapse > .panel-body {
-  border-top-color: #00659c;
+  border-top-color: #0070EF;
 }
 .panel-info > .panel-heading .badge {
-  color: #00659c;
+  color: #0070EF;
   background-color: #fff;
 }
 .panel-info > .panel-footer + .panel-collapse > .panel-body {
-  border-bottom-color: #00659c;
+  border-bottom-color: #0070EF;
 }
 .panel-warning {
   border-color: #ec7a08;
@@ -8925,7 +8925,7 @@ button.close {
   color: #0088ce;
 }
 .alert .alert-link:hover {
-  color: #00659c;
+  color: #0070EF;
 }
 .alert > .btn.pull-right {
   margin-top: -3px;
@@ -9119,7 +9119,7 @@ fieldset[disabled] .btn-default.active {
   background-image: linear-gradient(to bottom, #39a5dc 0%, #0088ce 100%);
   background-repeat: repeat-x;
   filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff39a5dc', endColorstr='#ff0088ce', GradientType=0);
-  border-color: #00659c;
+  border-color: #0070EF;
   color: #fff;
 }
 .btn-primary:hover,
@@ -9129,7 +9129,7 @@ fieldset[disabled] .btn-default.active {
 .open .dropdown-toggle.btn-primary {
   background-color: #0088ce;
   background-image: none;
-  border-color: #00659c;
+  border-color: #0070EF;
   color: #fff;
 }
 .btn-primary:active,
@@ -9165,7 +9165,7 @@ fieldset[disabled] .btn-primary:active,
 .btn-primary[disabled].active,
 fieldset[disabled] .btn-primary.active {
   background-color: #0088ce;
-  border-color: #00659c;
+  border-color: #0070EF;
 }
 .btn-xs,
 .btn-group-xs .btn,

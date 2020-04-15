@@ -44,7 +44,7 @@ var ZConf = {
             }
             ZConf.docurl = "http://localdoc"
             ZConf.storeurl = "http://localhost/?skin="+((ZSkin) ? ZSkin.skin:"none")
-            ZConf.zdmurl = "http://localhost/?skin="+((ZSkin) ? ZSkin.skin:"none")
+            ZConf.zdmurl = "http://localhost"
             ZConf.url = "http://localhost/v1"
             ZConf.adm_url = "http://localhost:7700"
             ZConf.testmode = true
@@ -66,7 +66,7 @@ var ZConf = {
             // ZConf.url = "http://test.zerynth.com/v1"
             ZConf.url = "https://test.zerynth.com/v1"
             ZConf.storeurl = "https://storetest.zerynth.com/?skin="+((ZSkin) ? ZSkin.skin:"none")
-            ZConf.zdmurl = "https://zdm.test.zerynth.com/?skin="+((ZSkin) ? ZSkin.skin:"none")
+            ZConf.zdmurl = "https://zdm.test.zerynth.com"
             ZConf.adm_url = "http://test.zerynth.com:7700"
             ZConf.testmode = true
             ZConf.cimode = true
@@ -86,7 +86,7 @@ var ZConf = {
             ZConf.docurl = "http://docs.zerynth.com"
             ZConf.url = "http://backend.zerynth.com/v1"
             ZConf.storeurl = "https://store.zerynth.com/?skin="+((ZSkin) ? ZSkin.skin:"none")
-            ZConf.zdmurl = "https://zdm.zerynth.com/?skin="+((ZSkin) ? ZSkin.skin:"none")
+            ZConf.zdmurl = "https://zdm.zerynth.com"
             ZConf.adm_url = "https://api.zerynth.com/v1"
             ZConf.testmode = false
         }

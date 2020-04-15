@@ -1,0 +1,63 @@
+<script>
+
+var FotaPreparedModal = {
+  dev: "",
+  __fill: function(device){
+    // $("#zdm_fota_alert").hide()
+    // var pwkdir = $("#project_workingdir")
+    // if (Store.projects.current) {
+    //     pwkdir.val(Store.projects.current.path);
+    // }
+    // FotaPrepareModal.zdm_dev_list = data
+    // document.getElementById("tabsearch").value="";
+    // FotaPrepareModal.create_table(FotaPrepareModal.zdm_dev_list);
+    FotaPreparedModal.dev = device
+  },
+  __show: function(){
+    $("#zdm_fota_prepared_modal").modal()
+  },
+  __hide: function(){
+    $("#zdm_fota_prepared_modal").modal("hide")
+  },
+  open_fota: function(){
+    ZDM.getdev(FotaPreparedModal.dev)
+      .then((device)=>{
+        console.log(device)
+        require('nw.gui').Shell.openExternal(ZConf.zdmurl+"/"+device.workspace_id+"/"+FotaPreparedModal.dev);
+        FotaPreparedModal.__hide()
+      })
+      .catch((err)=>{
+        
+      })    
+  },
+  back: function(){
+    FotaPreparedModal.__hide()
+    App.zdm_dev_list()
+  }
+}
+</script>
+
+
+
+<div class="modal fade" id="zdm_fota_prepared_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog" style="min-width: 40%">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">ZDM Fota Prepared</h4>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-success" id="zdm_fota_success">
+          <span class="pficon pficon-ok" ></span><p id="zdm_fota_ok">Fota Has been prepared correctly! Click on "Open ZDM GUI" to schedule the FOTA Firmware Update</p>
+        </div>
+        <center>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-info" onclick="FotaPreparedModal.open_fota()">Open ZDM GUI</button>
+        <button type="button" class="btn btn-warning" onclick="FotaPreparedModal.back()">Prepare Another Fota</button>
+        </center>
+      </div>
+    </div>
+  </div>
+</div>

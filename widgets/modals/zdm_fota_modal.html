@@ -1,0 +1,206 @@
+<script>
+
+var FotaPrepareModal = {
+  zdm_dev_list: [],
+  err: "",
+  set_wkdir: function(dir){
+     $("#project_workingdir").val(
+        Z.path.join(
+          dir
+          )
+        )
+  },
+  __fill: function(data){
+    $("#zdm_fota_alert").hide()
+    var pwkdir = $("#project_workingdir")
+    if (Store.projects.current) {
+        pwkdir.val(Store.projects.current.path);
+    }
+    FotaPrepareModal.zdm_dev_list = data
+    document.getElementById("tabsearch").value="";
+    FotaPrepareModal.create_table(FotaPrepareModal.zdm_dev_list);    
+  },
+  __show: function(){
+    $("#zdm_fota_modal").modal()
+  },
+  __hide: function(){
+    $("#zdm_fota_modal").modal("hide")
+  },
+  prepare: function(){
+    $("#zdm_fota_alert").hide()
+    var selected = $('#zdmdev_list input[name="zdmdev"]:checked').val()
+    var fw_vers = $("#fw_version").val()
+    var path = $("#project_workingdir").val()
+    console.log(selected)
+    console.log(fw_vers)
+    console.log(path)
+    if (!(selected && fw_vers && path)) {
+        console.log("Missing arguments", !(selected && fw_vers && path))
+        ZNotify.modal_error("zdm_fota","Missing Arguments")
+        ZNotify.done("Error")
+        return
+    }
+    if(Store.actions()) return;
+    Store.action("compiling",true)
+    ZNotify.wait("Preparing FOTA...")
+    FotaPrepareModal.__hide()
+    ZNotify.alert("Preparing FOTA, please wait...","Preparing FOTA","info",true)
+    
+    ZDM.command(["fota", "prepare", path, selected, fw_vers], {
+      stderr: (line)=>{
+          Z.log(line)
+              console.log(line)
+              if (line.includes("[error]")){
+                  FotaPrepareModal.err = line
+              }
+              if (line.includes("[fatal]")){
+                  FotaPrepareModal.err = line
+              }
+          }
+      })
+      .then(()=>{
+        Store.action("compiling",false)
+        ZNotify.unalert()
+        ZNotify.done()
+        Dialogs.modal("FotaPreparedModal",selected)
+        Z.log("FOTA Prepared")
+      })
+      .catch((err)=>{
+        ZNotify.unalert()
+        FotaPrepareModal.__show()
+        // Dialogs.modal("FotaPreparedModal",selected)
+        Store.action("compiling",false)
+        ZNotify.modal_error("zdm_fota",FotaPrepareModal.err)
+        ZNotify.done("Error")
+      })
+  },
+  select: function(row){
+    row.children('td').children('input').prop('checked', true);
+    row.removeClass('selected');
+    row.toggleClass('selected');
+  },
+  // upd_virtual: function(cb){
+  //   if (cb.prop("checked") == true){
+  //     ZDevices.targets[cb.prop("name")].selected = true
+  //   }
+  //   else{
+  //     ZDevices.targets[cb.prop("name")].selected = false
+  //   }
+  // },
+  create_table: function(devices){
+    var zdmtable = $("#zdmfota_div")
+    devices = _.sortBy(devices,"name")
+    var dd = {"devices": devices}
+    zdmtable.html($.templates("#zdm_device_modal_table").render(dd))
+
+    // $("#zdm_device_modal_table").html(header+$.templates("#zdm_device_modal_row").render(devices))
+  },
+  search_in_table: function(){
+    var input, filter, table, tr, i;
+    input = document.getElementById("tabsearch");
+    filter = input.value.toUpperCase();
+    // console.log(filter)
+    devices = FotaPrepareModal.zdm_dev_list
+    var searched = []
+    for (i = 0; i < devices.length; i++) {
+      if ( devices[i].name.toUpperCase().indexOf(filter) > -1 || 
+           devices[i].id.toUpperCase().indexOf(filter) > -1 ||
+           devices[i].workspace_id.toUpperCase().indexOf(filter) > -1 ||
+           devices[i].fleet_id.toUpperCase().indexOf(filter) > -1
+          ){
+              searched.push(devices[i])
+      }
+    }
+    FotaPrepareModal.create_table(searched);
+  },
+  choose_wkdir: function(){
+    Dialogs.open_dir()
+        .then((dir)=>{
+          FotaPrepareModal.set_wkdir(dir)
+        })
+  }
+}
+
+
+</script>
+
+<script id="zdm_device_modal_table" type="text/x-jsrender">
+<table class="table table-striped table-bordered" id="zdmdev_list" style="padding:4px">
+<tr style="background-color:#0070EF;color:#ffffff"><th>#</th><th>DEV NAME</th><th>DEV ID</th><th>WORKSPACE ID</th><th>FLEET ID</th></tr>
+{{for devices}}
+  <tr onclick="FotaPrepareModal.select($(this))">
+  <td><input type="radio" value="{{:id}}" name="zdmdev"></td>
+  <td>{{:name}}</td>
+  <td>{{:id}}</td>
+  <td>{{:workspace_id}}</td>
+  <td>{{:fleet_id}}</td>
+</tr>
+{{/for}}
+</table>
+</script>
+
+<style type="text/css">
+/*#zdm_device_modal_table {
+    width:  100%;
+    border-collapse: collapse;
+}
+#zdm_device_modal_table td {
+    border: 1px solid black;
+}*/
+.scrollingTable {
+    max-height: 30em;
+    overflow-y: auto;
+}
+</style>
+
+<div class="modal fade" id="zdm_fota_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog" style="min-width: 60%">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+          <span class="pficon pficon-close"></span>
+        </button>
+        <h4 class="modal-title" id="myModalLabel">ZDM Fota Prepare</h4>
+      </div>
+      <div class="modal-body">
+        <p style="text-align: center">Select the ZDM device</p>
+        <input style="width: 100%; background-image: url('img/searchicon.png'); background-position: 10px 10px; background-repeat: no-repeat; font-size: 14px; padding: 10px 20px 10px 40px; border: 1px solid #ddd;" type="text" id="tabsearch" onkeyup="FotaPrepareModal.search_in_table()" placeholder="Search for your ZDM Device..."title="Type in a name">
+        <br>
+        <br>
+        <div class="scrollingTable" id="zdmfota_div"></div>
+        
+        
+        <center>
+        <form class="form-horizontal" style="width: 60%">
+          
+          <div class="form-group">
+            <label class="col-sm-3 control-label" for="textInput2-modal-markup">ZProject Path</label>
+            <div class="col-sm-9">
+              <div class="input-group">
+                <input type="text" id="project_workingdir" class="form-control"  readonly>
+                <span class="input-group-btn">
+                  <button class="btn btn-default" type="button" onclick="FotaPrepareModal.choose_wkdir()"><span class="fa fa-ellipsis-h"></span></button>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="col-sm-3 control-label" for="textInput-modal-markup">Firmware Version</label>
+            <div class="col-sm-9">
+              <input type="text" id="fw_version" class="form-control" ></div>
+          </div>
+
+        </form>
+      </center>
+      <div class="alert alert-danger" id="zdm_fota_alert" style="display:none">
+          <span class="pficon pficon-error-circle-o" ></span><p id="zdm_fota_error"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-info" onclick="FotaPrepareModal.prepare()">Prepare</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -154,7 +154,7 @@ var App = {
 
 
             submenu = new nw.Menu()
-            submenu.append(new nw.MenuItem({label:"Getting Started",click:()=>{nw.Shell.openExternal("https://docs.zerynth.com/latest/official/core.zerynth.docs/gettingstarted/docs/index.html");}}))
+            submenu.append(new nw.MenuItem({label:"Getting Started",click:()=>{nw.Shell.openExternal("https://www.zerynth.com/blog/docs/zos/getting-started/getting-started/");}}))
             submenu.append(new nw.MenuItem({label:"Supported Devices",click:()=>{nw.Shell.openExternal("https://docs.zerynth.com/latest/supported_boards.html");}}))
             //submenu.append(new nw.MenuItem({label:"How to install packages",click:()=>{nw.Shell.openExternal("http://docs.zerynth.com");}}))
             submenu.append(new nw.MenuItem({type:"separator"}))
@@ -1385,7 +1385,17 @@ var App = {
     },
     stop_debug: function(){
 
-    }
+    },
+    zdm_dev_list: function(){
+            ZDM.alldevlist()
+                .then((devs)=>{
+                    // console.log(devs)
+                    Dialogs.modal("FotaPrepareModal",devs)
+                })
+                .catch((err)=>{
+                    Z.log("Error while retrieving devices from zdm! "+err)
+                })
+    },
 
 
 }

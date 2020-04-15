@@ -558,7 +558,7 @@ fieldset[disabled] .datepicker table tr td.selected.highlighted.focus {
 .datepicker table tr td.active.highlighted {
   color: #fff;
   background-color: #0088ce;
-  border-color: #00659c;
+  border-color: #0070EF;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
 }
 .datepicker table tr td.active:focus,
@@ -634,7 +634,7 @@ fieldset[disabled] .datepicker table tr td.active.highlighted:focus,
 fieldset[disabled] .datepicker table tr td.active.focus,
 fieldset[disabled] .datepicker table tr td.active.highlighted.focus {
   background-color: #0088ce;
-  border-color: #00659c;
+  border-color: #0070EF;
 }
 .datepicker table tr td.active .badge,
 .datepicker table tr td.active.highlighted .badge {
@@ -667,7 +667,7 @@ fieldset[disabled] .datepicker table tr td.active.highlighted.focus {
 .datepicker table tr td span.active.disabled:hover {
   color: #fff;
   background-color: #0088ce;
-  border-color: #00659c;
+  border-color: #0070EF;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
 }
 .datepicker table tr td span.active:focus,
@@ -797,7 +797,7 @@ fieldset[disabled] .datepicker table tr td span.active:hover.focus,
 fieldset[disabled] .datepicker table tr td span.active.disabled.focus,
 fieldset[disabled] .datepicker table tr td span.active.disabled:hover.focus {
   background-color: #0088ce;
-  border-color: #00659c;
+  border-color: #0070EF;
 }
 .datepicker table tr td span.active .badge,
 .datepicker table tr td span.active:hover .badge,
@@ -1170,7 +1170,7 @@ select.selectpicker {
 .bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-info,
 .bootstrap-switch .bootstrap-switch-handle-off.bootstrap-switch-info {
   color: #fff;
-  background: #00659c;
+  background: #0070EF;
 }
 .bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-success,
 .bootstrap-switch .bootstrap-switch-handle-off.bootstrap-switch-success {
@@ -2324,11 +2324,11 @@ fieldset[disabled] .combobox-container .input-group-addon.active {
 }
 .card-pf.card-pf-aggregate-status .card-pf-aggregate-status-notifications a.add:hover,
 .card-pf.card-pf-aggregate-status .card-pf-title a.add:hover {
-  color: #00659c;
+  color: #0070EF;
 }
 .card-pf.card-pf-aggregate-status .card-pf-aggregate-status-notifications a:hover,
 .card-pf.card-pf-aggregate-status .card-pf-title a:hover {
-  color: #00659c;
+  color: #0070EF;
 }
 .card-pf.card-pf-aggregate-status {
   padding: 0 10px;
@@ -4812,7 +4812,7 @@ a.disabled {
   padding: 10px 0;
 }
 .drawer-pf-action .btn-link:hover {
-  color: #00659c;
+  color: #0070EF;
 }
 .drawer-pf-loading {
   color: #4d5258;
@@ -5212,7 +5212,7 @@ a.disabled {
 .prettyprint .lit,
 .prettyprint .tag,
 .prettyprint .typ {
-  color: #00659c;
+  color: #0070EF;
 }
 .prettyprint ol.linenums {
   margin-bottom: 0;

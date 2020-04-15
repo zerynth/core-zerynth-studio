@@ -90,10 +90,10 @@ var ZButtonModal = {
                                     return _.values(v)
                                 })).length
                     if (vmn==1){
-                      $("#zbutton_virtualize_text").html('There is <span class="badge" id="zbutton_badge" style="background:#468c8c;margin:0">'+vmn+'</span> Virtual Machine created for this device')
+                      $("#zbutton_virtualize_text").html('There is <span class="badge" id="zbutton_badge" style="background:#0070EF;margin:0">'+vmn+'</span> Virtual Machine created for this device')
                       $("#zbutton_virtualize_box").show()
                     } else if (vmn>1) {
-                      $("#zbutton_virtualize_text").html('There are <span class="badge" id="zbutton_badge" style="background:#468c8c;margin:0">'+vmn+'</span> Virtual Machine created for this device')
+                      $("#zbutton_virtualize_text").html('There are <span class="badge" id="zbutton_badge" style="background:#0070EF;margin:0">'+vmn+'</span> Virtual Machine created for this device')
                       $("#zbutton_virtualize_box").show()
                     } else {
                       $("#zbutton_virtualize_box").hide()
@@ -300,7 +300,7 @@ var ZButtonModal = {
               <p id="zbutton_register_text">This device needs to be registered before virtualization</p>
             </div>
             <div class="col-sm-3" style="text-align:center">
-              <button id="zbutton_register" style="width:80%" class="btn btn-primary" onclick="ZButtonModal.register()">Register</button>
+              <button id="zbutton_register" style="width:80%" class="btn btn-info" onclick="ZButtonModal.register()">Register</button>
             </div>
           </div>
           <div id="zbutton_redeem_section">
@@ -318,7 +318,7 @@ var ZButtonModal = {
                     <input type="text" id="zbutton_redeem_code" class="form-control" placeholder="CC-XXXXX-YYYYY-ZZZZZ-WWWWW">
                 </div>
                 <div class="col-sm-3" style="text-align:center">
-                    <button id="zbutton_redeem" style="width:80%" class="btn btn-primary" onclick="ZButtonModal.redeem()">Go<span class="spinner spinner-xs spinner-inline" id="zbutton_redeem_waiting" style="display:none"></span></button>
+                    <button id="zbutton_redeem" style="width:80%" class="btn btn-info" onclick="ZButtonModal.redeem()">Go<span class="spinner spinner-xs spinner-inline" id="zbutton_redeem_waiting" style="display:none"></span></button>
                 </div>
               </div>
           </div>
@@ -330,7 +330,7 @@ var ZButtonModal = {
               <p id="zbutton_createvm_text"></p>
             </div>
             <div class="col-sm-3" style="text-align:center">
-              <button id="zbutton_createvm" style="width:80%" class="btn btn-primary" onclick="ZButtonModal.createvm()">Create</button>
+              <button id="zbutton_createvm" style="width:80%" class="btn btn-info" onclick="ZButtonModal.createvm()">Create</button>
             </div>
           </div>
         </div>
@@ -341,7 +341,7 @@ var ZButtonModal = {
               <p id="zbutton_virtualize_text"></p>
             </div>
             <div class="col-sm-3" style="text-align:center">
-              <button id="zbutton_virtualize" style="width:80%" class="btn btn-primary" onclick="ZButtonModal.virtualize()">Virtualize</button>
+              <button id="zbutton_virtualize" style="width:80%" class="btn btn-info" onclick="ZButtonModal.virtualize()">Virtualize</button>
             </div>
           </div>
         </div>

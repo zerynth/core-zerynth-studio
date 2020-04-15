@@ -11,7 +11,7 @@
 
 .theme-zerynth-dark .zleftbar {
     background:#232323;
-    border-right: solid 1px #468c8c;
+    border-right: solid 1px #0070EF;
 }
 
 .theme-zerynth-dark .zleftbar .btn {
@@ -21,7 +21,7 @@
 
 .theme-zerynth-dark .zleftbar .btn:focus,
 .theme-zerynth-dark .zleftbar .current {
-    background: #468c8c;
+    background: #0070EF;
     color: #fff;
 }
 
@@ -57,7 +57,7 @@
 .theme-zerynth-dark #code_tablist .code_tab.current {
     background-color: #ccc;
     color:#333;
-    border-left: 4px solid #468c8c;
+    border-left: 4px solid #0070EF;
     border-bottom: 0px solid #ddd;
 }
 
@@ -156,7 +156,7 @@
 
 
 .theme-zerynth-dark .zpm_pack_inst:hover {
-    color:#468c8c;
+    color:#0070EF;
 }
 
 .theme-zerynth-dark #footer {

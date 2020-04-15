@@ -714,20 +714,20 @@ var ProfileModal = {
     <div style="font-size:15px;text-align: center">Your Zerynth Starter Licenses</div>
     <div class="text-center" style="height: 30px;">
       <div class="btn-group btn-group-sm" data-toggle="buttons" id="starter_vms_selector">
-        <label class="btn btn-primary active tooltip-br" title="VMs - FreeRTOS" id="out0">
+        <label class="btn btn-info active tooltip-br" title="VMs - FreeRTOS" id="out0">
           <input type="radio" name="starter_sel" id="s0" autocomplete="off" value="0" checked>VMs - FreeRTOS
         </label>
-        <label class="btn btn-primary tooltip-br" title="VMs - ChibiOS" id="out1">
+        <label class="btn btn-info tooltip-br" title="VMs - ChibiOS" id="out1">
           <input type="radio" name="starter_sel" id="s1" autocomplete="off" value="1">VMs - ChibiOS
         </label>
       </div>
     </div>
     <!-- Messages in Starter VMs Section -->
     {{if starter_table.length>1}}
-      <div class="starter_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.starter.remaining > 50}}#468c8c{{else assets.table.freertos.starter.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.starter.remaining}}</font> Zerynth Starter VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Starter VMs</a></div>
-      <div class="starter_chibi_section" style="text-align: center" hidden><font color="{{if assets.table.chibi.starter.remaining > 30}}#468c8c{{else assets.table.chibi.starter.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.chibi.starter.remaining}}</font> Zerynth Starter VMs - ChibiOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Starter VMs</a></div>
+      <div class="starter_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.starter.remaining > 50}}#0070EF{{else assets.table.freertos.starter.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.starter.remaining}}</font> Zerynth Starter VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Starter VMs</a></div>
+      <div class="starter_chibi_section" style="text-align: center" hidden><font color="{{if assets.table.chibi.starter.remaining > 30}}#0070EF{{else assets.table.chibi.starter.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.chibi.starter.remaining}}</font> Zerynth Starter VMs - ChibiOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Starter VMs</a></div>
     {{else}}
-      <div class="starter_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.starter.remaining > 50}}#468c8c{{else assets.table.freertos.starter.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.starter.remaining}}</font> Zerynth Starter VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Starter VMs</a></div>
+      <div class="starter_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.starter.remaining > 50}}#0070EF{{else assets.table.freertos.starter.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.starter.remaining}}</font> Zerynth Starter VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Starter VMs</a></div>
       <div class="starter_chibi_section" style="text-align: center" hidden><a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Starter VMs</a></div>
     {{/if}}
     <!-- Starter VMs Section -->
@@ -737,11 +737,11 @@ var ProfileModal = {
         <center>
           <div class="starter_{{:rtos}}_section" {{if rtos=='chibi'}}hidden{{/if}}>
             <table class="table table-striped table-bordered" style="max-width: 75%;padding:4px;">
-            <tr style="background-color:#468c8c;color:#ffffff"><th width="85%">Consumed Zerynth Starter VMs - {{if rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}}</th width="15%"><th>{{:consumed}} / {{if total<0}}∞{{else}}{{:total}}{{/if}}</th></tr>
+            <tr style="background-color:#0070EF;color:#ffffff"><th width="85%">Consumed Zerynth Starter VMs - {{if rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}}</th width="15%"><th>{{:consumed}} / {{if total<0}}∞{{else}}{{:total}}{{/if}}</th></tr>
             {{if targets.length>0}}
               {{for targets}}
                 <tr>
-                <td>{{:target}}</td><td style="color:#468c8c;">{{:consumed}}</td>
+                <td>{{:target}}</td><td style="color:#0070EF;">{{:consumed}}</td>
                 </tr>
               {{/for}}
             {{/if}}
@@ -757,20 +757,20 @@ var ProfileModal = {
     <div style="font-size:15px;text-align: center">Your Zerynth Premium Licenses</div>
     <div class="text-center" style="height: 30px;">
       <div class="btn-group btn-group-sm" data-toggle="buttons" id="premium_vms_selector">
-        <label class="btn btn-primary active tooltip-br" title="VMs - FreeRTOS" id="out0">
+        <label class="btn btn-info active tooltip-br" title="VMs - FreeRTOS" id="out0">
           <input type="radio" name="premium_sel" id="p0" autocomplete="off" value="0" checked>VMs - FreeRTOS
         </label>
-        <label class="btn btn-primary tooltip-br" title="VMs - ChibiOS" id="out1">
+        <label class="btn btn-info tooltip-br" title="VMs - ChibiOS" id="out1">
           <input type="radio" name="premium_sel" id="p1" autocomplete="off" value="1">VMs - ChibiOS
         </label>
       </div>
     </div>
     <!-- Messages in Premium VMs Section -->
     {{if premium_table.length>1}}
-      <div class="premium_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.premium.remaining > 50}}#468c8c{{else assets.table.freertos.premium.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.premium.remaining}}</font> Zerynth Premium VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Premium VMs</a></div>
-      <div class="premium_chibi_section" style="text-align: center" hidden><font color="{{if assets.table.chibi.premium.remaining > 30}}#468c8c{{else assets.table.chibi.premium.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.chibi.premium.remaining}}</font> Zerynth Premium VMs - ChibiOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Premium VMs</a></div>
+      <div class="premium_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.premium.remaining > 50}}#0070EF{{else assets.table.freertos.premium.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.premium.remaining}}</font> Zerynth Premium VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Premium VMs</a></div>
+      <div class="premium_chibi_section" style="text-align: center" hidden><font color="{{if assets.table.chibi.premium.remaining > 30}}#0070EF{{else assets.table.chibi.premium.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.chibi.premium.remaining}}</font> Zerynth Premium VMs - ChibiOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Premium VMs</a></div>
     {{else}}
-      <div class="premium_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.premium.remaining.remaining > 50}}#468c8c{{else assets.table.freertos.premium.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.premium.remaining}}</font> Zerynth Premium VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Premium VMs</a></div>
+      <div class="premium_freertos_section" style="text-align: center"><font color="{{if assets.table.freertos.premium.remaining.remaining > 50}}#0070EF{{else assets.table.freertos.premium.remaining > 0}}#f0ad4e{{else}}#d9534f{{/if}}">{{:assets.table.freertos.premium.remaining}}</font> Zerynth Premium VMs - FreeRTOS remaining. <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Premium VMs</a></div>
       <div class="premium_chibi_section" style="text-align: center" hidden><a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Premium VMs</a></div>
     {{/if}}
     <!-- Premium VMs Section -->
@@ -780,11 +780,11 @@ var ProfileModal = {
         <center>
           <div class="premium_{{:rtos}}_section" {{if rtos=='chibi'}}hidden{{/if}}>
             <table class="table table-striped table-bordered" style="max-width: 75%;padding:4px;">
-            <tr style="background-color:#468c8c;color:#ffffff"><th width="85%">Consumed Zerynth Premium VMs - {{if rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}}</th><th width="15%">{{:consumed}} / {{if total<0}}∞{{else}}{{:total}}{{/if}}</th></tr>
+            <tr style="background-color:#0070EF;color:#ffffff"><th width="85%">Consumed Zerynth Premium VMs - {{if rtos=='chibi'}}ChibiOS{{else}}FreeRTOS{{/if}}</th><th width="15%">{{:consumed}} / {{if total<0}}∞{{else}}{{:total}}{{/if}}</th></tr>
             {{if targets.length>0}}
               {{for targets}}
                 <tr>
-                <td>{{:target}}</td><td style="color:#468c8c;">{{:consumed}}</td>
+                <td>{{:target}}</td><td style="color:#0070EF;">{{:consumed}}</td>
                 </tr>
               {{/for}}
             {{/if}}
@@ -803,7 +803,7 @@ var ProfileModal = {
     <center>
       <a href="https://store.zerynth.com/" target="_blank">Get more Zerynth Licenses</a>
       <table class="table table-striped table-bordered history-table" style="max-width: 75%;padding:4px">
-      <tr style="background-color:#468c8c;color:#ffffff"><th>Item</th><th>Date</th><th>Price</th><th>Receipt Number</th></tr>
+      <tr style="background-color:#0070EF;color:#ffffff"><th>Item</th><th>Date</th><th>Price</th><th>Receipt Number</th></tr>
       {{for history}}
         <tr>
         <td>{{:item}}</td><td>{{:date.slice(0,-9)}}</td><td style="text-align: right">$ {{:price}}</td><td style="text-align: right">{{if order}}{{:order}}{{else}}---{{/if}}</td>
@@ -818,7 +818,7 @@ var ProfileModal = {
 <hr style="margin:10px;">
 <!-- VMs/PurchaseHistory Selector -->
 <center><div class="btn-group" data-toggle="buttons" id="vms_history_selector">
-  <label class="btn btn-primary active tooltip-br" title="Zerynth VMs" id="out0">
+  <label class="btn btn-info active tooltip-br" title="Zerynth VMs" id="out0">
     <input type="radio" name="vms_history_sel" id="vmp0" autocomplete="off" value="0" checked>Zerynth VMs
   </label>
   <label class="btn btn-warning tooltip-br" title="Purchase History" id="out1">

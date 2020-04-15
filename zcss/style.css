@@ -332,6 +332,40 @@
 .zerynth-book:before {
   content: "\e909";
 }
+
+@font-face {
+  font-family: 'icomoon';
+  src:  url('fonts/icomoon.eot?amzdjl');
+  src:  url('fonts/icomoon.eot?amzdjl#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?amzdjl') format('truetype'),
+    url('fonts/icomoon.woff?amzdjl') format('woff'),
+    url('fonts/icomoon.svg?amzdjl#icomoon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+[class^="icon-"], [class*=" icon-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'icomoon' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-Zerynth-app-icon_logo-1:before {
+  content: "\e900";
+}
+.icon-zadmlogo:before {
+  content: "\e901";
+}
 .zerynth-clock-o:before {
   content: "\e905";
 }

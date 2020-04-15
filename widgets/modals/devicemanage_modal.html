@@ -216,7 +216,7 @@ var DeviceManageModal = {
 
 <script id="devicemanage_modal_row" type="text/x-jsrender">
 <tr onclick="DeviceManageModal.prepare_add('{{:target}}')"">
-  <td><button type="button" class="btn btn-xs btn-primary" onclick="DeviceManageModal.prepare_add('{{:target}}')"><span class="fa fa-plus"></span></button></td>
+  <td><button type="button" class="btn btn-xs btn-info" onclick="DeviceManageModal.prepare_add('{{:target}}')"><span class="fa fa-plus"></span></button></td>
   <td>{{:name}}</td>
   <td>{{:board_producer}}</td>
   <td>{{:architecture}}</td>
@@ -232,7 +232,7 @@ var DeviceManageModal = {
   <td>{{:chipid || "not registered"}}</td>
   <td>{{:target}}</td>
   <td>
-  <button class="btn btn-xs btn-primary" onclick="DeviceManageModal.prepare_modify('{{:name}}')"><span class="fa fa-pencil"></span></button>
+  <button class="btn btn-xs btn-info" onclick="DeviceManageModal.prepare_modify('{{:name}}')"><span class="fa fa-pencil"></span></button>
   <button class="btn btn-xs btn-danger" onclick="DeviceManageModal.prepare_remove('{{:name}}')"><span class="fa fa-remove"></span></button>
   </td>
 </tr>
@@ -288,7 +288,7 @@ var DeviceManageModal = {
                         </div>
                         <input type="hidden" name="dm-addnew-markup-hidden" id="dm-addnew-markup-target"/>
                         <button type="button" class="btn btn-default" onclick="DeviceManageModal.reset()">Back</button>
-                        <button type="submit" class="btn btn-primary">Add</button>
+                        <button type="submit" class="btn btn-info">Add</button>
                       </form>
                   </div>
                 </div>
@@ -330,7 +330,7 @@ var DeviceManageModal = {
                                     <input type="text" class="form-control" id="dm-modify-markup-chipid" class="form-control" readonly>
                             </div>
                         </div>
-                       <button type="submit" class="btn btn-primary">Update</button>
+                       <button type="submit" class="btn btn-info">Update</button>
                       </form>
                     </div>
 
@@ -342,7 +342,7 @@ var DeviceManageModal = {
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-dismiss="modal">Done</button>
+        <button type="button" class="btn btn-info" data-dismiss="modal">Done</button>
       </div>
     </div>
   </div>
