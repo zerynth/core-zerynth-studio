@@ -122,7 +122,7 @@ var VirtualizeModal = {
       <td><input type="radio" value="{{:uuid}}" name="vms" {{if index==0}}checked{{/if}}></td>
       <td>{{:devname}}</td>
       <td>{{:rtos}}</td>
-      <td>{{if (features == '' || features == 'ble')}}Starter{{else}}Premium{{/if}}</td>
+      <td>{{if (vm_features == '' || vm_features == 'ble')}}Starter{{else}}Premium{{/if}}</td>
       <td>{{:features}}</td>
       <td>{{:patch.toUpperCase()}}</td>
     </tr>

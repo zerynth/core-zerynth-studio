@@ -190,6 +190,56 @@ var ZButtonModal = {
             Store.action("virtualizing",false)
         })
   },
+  install: function(){
+    var dev = ZButtonModal.dev
+    ZNotify.wait("Installing Zerynth OS...")
+    ZButtonModal.__hide()
+    Store.action("virtualizing",true)
+    ZNotify.alert("Installing Zerynth OS, please wait...","Install Zerynth OS","info",true)
+    var cmds = ["project","install"]
+    prj = Z.path.join(ZConf.tempdir,dev.target)
+    cmds.push(prj)
+    cmds.push("--force")
+    cmds.push("--target")
+    cmds.push(dev.target)
+
+    var retrieved_chipid=null
+    var retrieved_remoteid=null
+    ZTC.command(cmds,{
+      stdout: (line)=>{
+          Z.log(line)
+              if (line.includes("reset the device")){
+                  ZNotify.alert_timeout("Please Reset the Device!","Device Reset needed","info",5000)
+              } else if(line.includes("Chip id retrieved:")){
+                  retrieved_chipid=line.substring(line.indexOf(":")+1).replace(/^\n|\n$/g, '').trim()
+              } else if(line.includes("registered with uid:")){
+                  retrieved_remoteid=line.substring(line.indexOf(":")+1).replace(/^\n|\n$/g, '').trim()
+              }
+          }
+      })
+        .then(()=>{
+            Store.action("virtualizing",false)
+            ZNotify.unalert()
+            ZNotify.done()
+            Z.log("Operation successful! Now you can Uplink your code into your "+dev.target)
+            if(!dev.manual) {
+                ZDevices.disambiguate()
+            } else if(retrieved_chipid){
+                //save chipid to device upon registration
+                ZTC.command(["device","db","put",dev.target,dev.name,"--spec","chipid:"+retrieved_chipid,"--spec","remote_id:"+retrieved_remoteid]).then(()=>{
+                    dev.remote_id = retrieved_remoteid
+                    dev.chipid = retrieved_chipid
+                    ZDevices.invalidate()
+                })
+            }
+            //Dialogs.modal("VirtualizeModal",_.values(Store.vms[dev.target]))
+        })
+        .catch((err)=>{
+            ZNotify.unalert()
+            ZNotify.done("Error")
+            Store.action("virtualizing",false)
+        })
+  },
   createvm: function(){
     var target = ZButtonModal.dev.original_target || ZButtonModal.dev.target
     ZTC.vmlist(target)
@@ -200,33 +250,33 @@ var ZButtonModal = {
             }
             return ZTC.vmlistcreated(ZButtonModal.dev.remote_id)
               .then((my_vms)=>{
-								var openCreateVmModal = () => {
-									ZButtonModal.__hide()
-									return Dialogs.modal("CreateVMModal",{
-											dev:ZButtonModal.dev,
-											vms:vms,
-											my_vms:my_vms,
-											callback:() =>{ZButtonModal.__show(); ZButtonModal.adjust()}})
-								}
-								if(!Store.profile || !Store.profile.assets) {
-									// If store is not set, fetch it before opening the CreateVM
-									// modal.
-									console.log("Updating profile before CreateVM")
-									return ZTC.get_profile()
-										.then((prof) => {
-											Store.set_profile(prof)
-											return openCreateVmModal()
-										})
-								} else {
-									// Open CreateVM modal without any other API call.
-									return openCreateVmModal()
-								}
+                var openCreateVmModal = () => {
+                  ZButtonModal.__hide()
+                  return Dialogs.modal("CreateVMModal",{
+                      dev:ZButtonModal.dev,
+                      vms:vms,
+                      my_vms:my_vms,
+                      callback:() =>{ZButtonModal.__show(); ZButtonModal.adjust()}})
+                }
+                if(!Store.profile || !Store.profile.assets) {
+                  // If store is not set, fetch it before opening the CreateVM
+                  // modal.
+                  console.log("Updating profile before CreateVM")
+                  return ZTC.get_profile()
+                    .then((prof) => {
+                      Store.set_profile(prof)
+                      return openCreateVmModal()
+                    })
+                } else {
+                  // Open CreateVM modal without any other API call.
+                  return openCreateVmModal()
+                }
               })
         })
         .catch((err)=>{
-					console.error("Error in createvm", err)
-					ZButtonModal.__hide()
-					ZNotify.alert("An internet connection error occured. Please check your connection and try again.","Connection error","error",false)
+          console.error("Error in createvm", err)
+          ZButtonModal.__hide()
+          ZNotify.alert("An internet connection error occured. Please check your connection and try again.","Connection error","error",false)
         })
   },
   virtualize: function(){
@@ -282,6 +332,18 @@ var ZButtonModal = {
         <h4 class="modal-title" id="zbutton_modal_title">Virtualization Wizard</h4>
       </div>
       <div class="modal-body">
+        <div id="zbutton_device_install">
+          <h2>Zerynth OS</h2>
+          <div class="row">
+            <div class="col-sm-9">
+              <p id="zbutton_install_text">Install Zerynth OS on your Device<br><i>Note: This quick procedure will install the basic version of Zerynth OS</i></p>
+            </div>
+            <div class="col-sm-3" style="text-align:center">
+              <button id="zbutton_install" style="width:80%; border-width: 3px 3px 3px 3px; border-color:orange;" class="btn btn-info" onclick="ZButtonModal.install()">Install OS</button>
+            </div>
+          </div>
+        </div>
+        <hr>
         <div id="zbutton_device_box">
           <h2>Device info</h2>
           <div class="row">
