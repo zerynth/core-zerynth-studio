@@ -64,7 +64,8 @@ function login_go(){
         $.ajax(ZConf.oauth.zerynth,{
             method:"GET",
             headers: {
-                Authorization: "Basic "+ btoa($("#LoginModalEmail").val()+":"+$("#LoginModalPwd").val())
+                Authorization: "Basic "+ btoa($("#LoginModalEmail").val()+":"+$("#LoginModalPwd").val()),
+                "User-Agent": ZConf.user_agent+"/"+ZConf.vrs+"/"+ZConf.platform
             },
             success: function(data,status,xhr){
                 console.log("Success")

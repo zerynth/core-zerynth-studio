@@ -70,6 +70,25 @@ var ZConf = {
             ZConf.adm_url = "http://test.zerynth.com:7700"
             ZConf.testmode = true
             ZConf.cimode = true
+        } else if (process.env.ZERYNTH_TESTMODE == 3) {
+            ZConf.oauth = {
+                "google": "https://backend.zerynth.com/v1/user/google?json=1",
+                "facebook": "https://backend.zerynth.com/v1/user/facebook?json=1",
+                "zerynth": "https://backend.zerynth.com/v1/user",
+                "github": "https://github.com/login/oauth/authorize?client_id=99fdc1e39d8ce3051ce6&scope=user,repo&state=",
+            },
+                ZConf.redirect = {
+                    "google": "https://backend.zerynth.com/v1/user/google/auth",
+                    "facebook": "https://backend.zerynth.com/v1/user/facebook/auth",
+                    "zerynth": "https://backend.zerynth.com/v1/user",
+                    "github": "https://backend.zerynth.com/v1/user/github/auth",
+                }
+            ZConf.docurl = "http://docs.zerynth.com"
+            ZConf.url = "http://backend.zerynth.com/v1"
+            ZConf.storeurl = "https://store.zerynth.com/?skin=" + ((ZSkin) ? ZSkin.skin : "none")
+            ZConf.zdmurl = "https://zdm.stage.zerynth.com"
+            ZConf.adm_url = "https://api.zerynth.com/v1"
+            ZConf.testmode = false
         } else {
             ZConf.oauth = {
                     "google":"https://backend.zerynth.com/v1/user/google?json=1",
