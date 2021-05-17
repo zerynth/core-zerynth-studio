@@ -1,63 +1,149 @@
 <script>
 
-var FotaPreparedModal = {
-  dev: "",
-  __fill: function(device){
-    // $("#zdm_fota_alert").hide()
-    // var pwkdir = $("#project_workingdir")
-    // if (Store.projects.current) {
-    //     pwkdir.val(Store.projects.current.path);
-    // }
-    // FotaPrepareModal.zdm_dev_list = data
-    // document.getElementById("tabsearch").value="";
-    // FotaPrepareModal.create_table(FotaPrepareModal.zdm_dev_list);
-    FotaPreparedModal.dev = device
-  },
-  __show: function(){
-    $("#zdm_fota_prepared_modal").modal()
-  },
-  __hide: function(){
-    $("#zdm_fota_prepared_modal").modal("hide")
-  },
-  open_fota: function(){
-    ZDM.getdev(FotaPreparedModal.dev)
-      .then((device)=>{
-        console.log(device)
-        require('nw.gui').Shell.openExternal(ZConf.zdmurl+"/"+device.workspace_id+"/"+FotaPreparedModal.dev);
-        FotaPreparedModal.__hide()
-      })
-      .catch((err)=>{
-        
-      })    
-  },
-  back: function(){
-    FotaPreparedModal.__hide()
-    App.zdm_dev_list()
-  }
-}
+    var FotaPreparedModal = {
+        dev: "",
+        ver: "",
+        __fill: function (data) {
+            $("#zdm_confirm_alert").hide()
+            FotaPreparedModal.dev = data.dev
+            FotaPreparedModal.devname = data.devname
+            FotaPreparedModal.ver = data.ver
+            console.log(FotaPreparedModal.ver)
+            $("#zdm_fota_ok").html("Fota Has been prepared correctly! Click on 'Start FOTA' to schedule the Firmware Over The Air update procedure for Device "+FotaPreparedModal.devname)
+            ZDM.getfws(data.wks)
+                .then((fws)=>{
+                    // console.log(devs)
+                    var picker = $("#fotavrs_picker")
+                    picker.empty()
+                    picker.html($.templates('<option value="{{:version}}">{{:version}}</option>').render(fws)
+                      )
+                    picker.selectpicker("refresh")
+                    picker.selectpicker("val",FotaPreparedModal.ver)
+                    picker.on("change",function(){
+                        var selected = $('#fotavrs_picker option:selected').val();
+                        FotaPreparedModal.ver = selected
+                        console.log(FotaPreparedModal.ver)
+                    })
+                })
+                .catch((err)=>{
+                    Z.log("Error while retrieving firmwares from zdm! "+err)
+                })
+        },
+        __show: function () {
+            $("#zdm_fota_prepared_modal").modal()
+        },
+        __hide: function () {
+            $("#zdm_fota_prepared_modal").modal("hide")
+        },
+        open_fota: function () {
+            FotaPreparedModal.__hide()
+            Dialogs.modal("FotaScheduleConfirm", {dev: FotaPreparedModal.dev, ver: FotaPreparedModal.ver, devname: FotaPreparedModal.devname})
+        },
+        back: function () {
+            FotaPreparedModal.__hide()
+            App.zdm_dev_list()
+        },
+        confirm: function () {
+            $("#zdm_confirm_alert").hide()
+            if (!(FotaPreparedModal.ver)) {
+                console.log("Missing version", !(FotaPreparedModal.ver))
+                ZNotify.modal_error("zdm_confirm","Missing version")
+                ZNotify.done("Error")
+                return
+            }
+            FotaPreparedModal.__hide()
+            ZNotify.unalert()
+            ZNotify.done()
+            var confirm = bootbox.confirm({
+                title: "Important",
+                message: "Are you sure to start a FOTA on the device "+FotaPreparedModal.devname+" version "+FotaPreparedModal.ver,
+                buttons: {
+                    cancel: {
+                        label: '<i class="fa fa-times"></i> Back'
+                    },
+                    confirm: {
+                        label: '<i class="fa fa-check"></i> Confirm'
+                    }
+                },
+                callback: function (result) {
+                    if (result==false){
+                        confirm.modal("hide")
+                        FotaPreparedModal.__show()
+                    } else {
+                        Store.action("scheduling",true)
+                        ZNotify.wait("Starting FOTA...")
+                        // FotaScheduleConfirm.__hide()
+                        confirm.modal("hide")
+                        ZNotify.alert("Scheduling FOTA...", "Schedule FOTA", "info", true)
+                        ZDM.command(["fota", "schedule", FotaPreparedModal.ver, FotaPreparedModal.dev], {
+                            stderr: (line) => {
+                                console.log(line)
+                                if (line.includes("[error]")) {
+                                    FotaPreparedModal.err = line
+                                }
+                                if (line.includes("[fatal]")) {
+                                    FotaPreparedModal.err = line
+                                }
+                            }
+                        //}).then(() => {
+                        //     ZNotify.unalert()
+                        //     ZNotify.done()
+                        // }).catch((err) => {
+                        //     ZNotify.unalert()
+                        //     ZNotify.done("FOTA error")
+                        //     Z.log("[error] Failed to schedule FOTA on the selected devices")
+                        // })
+                        }).then(()=>{
+                            Store.action("scheduling",false)
+                            ZNotify.unalert()
+                            ZNotify.done()
+                            Z.log("FOTA Started...check on ZDM GUI the result of Firmware over the air update process")
+                        }).catch((err)=>{
+                            Store.action("scheduling",false)
+                            confirm.modal("hide")
+                            FotaPreparedModal.__show()
+                            ZNotify.modal_error("zdm_confirm",FotaPreparedModal.err)
+                            ZNotify.done("Error")
+                        })
+                    }
+                }
+            });
+        }
+    }
 </script>
 
 
-
-<div class="modal fade" id="zdm_fota_prepared_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-  <div class="modal-dialog" style="min-width: 40%">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
-          <span class="pficon pficon-close"></span>
-        </button>
-        <h4 class="modal-title" id="myModalLabel">ZDM Fota Prepared</h4>
-      </div>
-      <div class="modal-body">
-        <div class="alert alert-success" id="zdm_fota_success">
-          <span class="pficon pficon-ok" ></span><p id="zdm_fota_ok">Fota Has been prepared correctly! Click on "Open ZDM GUI" to schedule the FOTA Firmware Update</p>
+<div class="modal fade" id="zdm_fota_prepared_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog" style="min-width: 40%">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                    <span class="pficon pficon-close"></span>
+                </button>
+                <h4 class="modal-title" id="myModalLabel">ZDM Fota Prepared</h4>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success" id="zdm_fota_success">
+                    <span class="pficon pficon-ok"></span>
+                    <p id="zdm_fota_ok"></p>
+                    <center>
+                    <select class="selectpicker" id="fotavrs_picker">
+                    </select>
+                </center>
+                </div>
+                <div class="alert alert-danger" id="zdm_confirm_alert" style="display:none">
+                  <span class="pficon pficon-error-circle-o" ></span><p id="zdm_confirm_error"></p>
+                </div>
+                <center>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-info" onclick="FotaPreparedModal.confirm()">Start FOTA
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="FotaPreparedModal.back()">Prepare Another
+                        Fota
+                    </button>
+                </center>
+            </div>
         </div>
-        <center>
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-info" onclick="FotaPreparedModal.open_fota()">Open ZDM GUI</button>
-        <button type="button" class="btn btn-warning" onclick="FotaPreparedModal.back()">Prepare Another Fota</button>
-        </center>
-      </div>
     </div>
-  </div>
 </div>

@@ -124,4 +124,18 @@ var ZDM = {
             })
         })
     },
+    getfws: function(workspace){
+        return new Promise((resolve,reject)=>{
+            var res
+            ZDM.command(["workspace","firmwares",workspace],{
+                stdout: (line)=>{
+                    res = JSON.parse(line)
+                }
+            }).then(()=>{
+                resolve(res)
+            }).catch((err)=>{
+                reject(err)
+            })
+        })
+    },
 }

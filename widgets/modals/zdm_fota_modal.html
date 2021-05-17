@@ -40,6 +40,10 @@ var FotaPrepareModal = {
         ZNotify.done("Error")
         return
     }
+    var ss = selected.split('_')
+    selected = ss[0]
+    var wks = ss[1]
+    console.log(wks)
     if(Store.actions()) return;
     Store.action("compiling",true)
     ZNotify.wait("Preparing FOTA...")
@@ -62,8 +66,8 @@ var FotaPrepareModal = {
         Store.action("compiling",false)
         ZNotify.unalert()
         ZNotify.done()
-        Dialogs.modal("FotaPreparedModal",selected)
-        Z.log("FOTA Prepared")
+        Dialogs.modal("FotaPreparedModal", {dev: selected, ver: fw_vers, wks: wks})
+        // Z.log("FOTA Prepared")
       })
       .catch((err)=>{
         ZNotify.unalert()
@@ -73,6 +77,27 @@ var FotaPrepareModal = {
         ZNotify.modal_error("zdm_fota",FotaPrepareModal.err)
         ZNotify.done("Error")
       })
+  },
+  startfota: function(){
+    $("#zdm_fota_alert").hide()
+    var selected = $('#zdmdev_list input[name="zdmdev"]:checked').val()
+    var fw_vers = $("#fw_version").val()
+    console.log(selected)
+    if (!(selected)) {
+        console.log("Missing Device", !(selected && fw_vers && path))
+        ZNotify.modal_error("zdm_fota","Missing Device")
+        ZNotify.done("Error")
+        return
+    }
+    var ss = selected.split('_')
+    selected = ss[0]
+    var wks = ss[1]
+    var devname = ss[2]
+    console.log(wks)
+    if(Store.actions()) return;
+    FotaPrepareModal.__hide()
+    Dialogs.modal("FotaPreparedModal", {dev: selected, ver: fw_vers, wks: wks, devname:devname})
+        Z.log("FOTA Prepared")
   },
   select: function(row){
     row.children('td').children('input').prop('checked', true);
@@ -129,7 +154,7 @@ var FotaPrepareModal = {
 <tr style="background-color:#0070EF;color:#ffffff"><th>#</th><th>DEV NAME</th><th>DEV ID</th><th>WORKSPACE ID</th><th>FLEET ID</th></tr>
 {{for devices}}
   <tr onclick="FotaPrepareModal.select($(this))">
-  <td><input type="radio" value="{{:id}}" name="zdmdev"></td>
+  <td><input type="radio" value="{{:id}}_{{:workspace_id}}_{{:name}}" name="zdmdev"></td>
   <td>{{:name}}</td>
   <td>{{:id}}</td>
   <td>{{:workspace_id}}</td>
@@ -168,7 +193,8 @@ var FotaPrepareModal = {
         <br>
         <br>
         <div class="scrollingTable" id="zdmfota_div"></div>
-        
+        <br>
+        <br>
         
         <center>
         <form class="form-horizontal" style="width: 60%">
@@ -200,6 +226,7 @@ var FotaPrepareModal = {
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
         <button type="button" class="btn btn-info" onclick="FotaPrepareModal.prepare()">Prepare</button>
+        <button type="button" class="btn btn-warning" onclick="FotaPrepareModal.startfota()">Start FOTA</button>
       </div>
     </div>
   </div>
